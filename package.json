@@ -1,0 +1,15 @@
+{
+  "name": "shapetrees",
+  "private": true,
+  "version": "0.0.1",
+  "scripts": {
+    "install": "npm run install --workspaces",
+    "build": "npm run build --workspaces"
+  },
+  "workspaces": [
+    "packages/client-core",
+    "packages/core",
+    "packages/client-http",
+    "packages/jshttp"
+  ]
+}

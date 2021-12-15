@@ -1,0 +1,29 @@
+{
+  "name": "@shapetrees/core",
+  "version": "0.0.1",
+  "description": "ShapeTrees core library",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/janeirodigital/shapetrees-js.git"
+  },
+  "keywords": [
+    "solid",
+    "shapes",
+    "rdf",
+    "shapetrees"
+  ],
+  "author": "",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/janeirodigital/shapetrees-js/issues"
+  },
+  "homepage": "https://github.com/janeirodigital/shapetrees-js#readme",
+  "devDependencies": {
+    "typescript": "^4.5.3"
+  }
+}

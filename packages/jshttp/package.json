@@ -1,0 +1,24 @@
+{
+  "name": "@shpaetrees/js-http",
+  "version": "0.0.1",
+  "description": "HTTP connector for the ShapeTress HTTP interface",
+  "main": "dist/index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/janeirodigital/shapetrees-js.git"
+  },
+  "keywords": [
+    "solid",
+    "shapetrees",
+    "rdf"
+  ],
+  "author": "",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/janeirodigital/shapetrees-js/issues"
+  },
+  "homepage": "https://github.com/janeirodigital/shapetrees-js#readme"
+}
