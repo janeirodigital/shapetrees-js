@@ -1,5 +1,7 @@
 // Corresponding shapetrees-java package: com.janeirodigital.shapetrees.core.vocabularies
-export const class RdfVocabulary {
+import {Namespaces} from "./Namespaces";
+
+export class RdfVocabulary {
 
   private constructor() {
   }

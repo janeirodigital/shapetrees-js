@@ -1,8 +1,6 @@
 // Corresponding shapetrees-java package: com.janeirodigital.shapetrees.core.vocabularies
-export const class ShapeTreeVocabulary {
-
-  private constructor() {
-  }
+import { Namespaces } from './Namespaces';
+export class ShapeTreeVocabulary {
 
    public static readonly HAS_ROOT_ASSIGNMENT: string = Namespaces.SHAPETREE + "hasRootAssignment";
 

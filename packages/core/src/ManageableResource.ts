@@ -1,7 +1,6 @@
 // Corresponding shapetrees-java package: com.janeirodigital.shapetrees.core
 import { ShapeTreeResourceType } from './enums/ShapeTreeResourceType';
 import { ShapeTreeException } from './exceptions/ShapeTreeException';
-import * as MalformedURLException from 'java/net';
 import { InstanceResource } from './InstanceResource';
 import { ResourceAttributes } from './ResourceAttributes';
 
@@ -16,7 +15,7 @@ export class ManageableResource extends InstanceResource {
 
    private readonly managerResourceUrl: URL | null;
 
-   private readonly isContainer: boolean;
+   private readonly _isContainer: boolean;
 
   /**
    * Construct a manageable resource.
@@ -32,7 +31,7 @@ export class ManageableResource extends InstanceResource {
   public constructor(url: URL, resourceType: ShapeTreeResourceType, attributes: ResourceAttributes, body: string, name: string, exists: boolean, managerResourceUrl: URL | null, isContainer: boolean) {
     super(url, resourceType, attributes, body, name, exists);
     this.managerResourceUrl = managerResourceUrl;
-    this.isContainer = isContainer;
+    this._isContainer = isContainer;
   }
 
   /**
@@ -44,17 +43,17 @@ export class ManageableResource extends InstanceResource {
     const rel: string = this.isContainer() ? ".." : ".";
     try {
       return new URL(this.getUrl(), rel);
-    } catch (ex) {
- if (ex instanceof MalformedURLException) {
-       throw new ShapeTreeException(500, "Malformed focus node when resolving <" + rel + "> against <" + this.getUrl() + ">");
-     }
+    } catch (ex: unknown) {
+      // ex.code === "ERR_INVALID_URL"
+      throw new ShapeTreeException(500, "Malformed focus node when resolving <" + rel + "> against <" + this.getUrl() + ">");
+    }
   }
 
   public getManagerResourceUrl(): URL | null {
     return this.managerResourceUrl;
   }
 
-  public getIsContainer(): boolean {
-    return this.isContainer;
+  public isContainer(): boolean {
+    return this._isContainer;
   }
 }

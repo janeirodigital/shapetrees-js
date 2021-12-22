@@ -1,17 +1,10 @@
 // Corresponding shapetrees-java package: com.janeirodigital.shapetrees.core.enums
-import { ShapeTreeVocabulary } from '../vocabularies/ShapeTreeVocabulary';
+// import { ShapeTreeVocabulary } from '../vocabularies/ShapeTreeVocabulary';
+// waiting on https://github.com/microsoft/TypeScript/issues/40793 to leverage ShapeTreeVocabulary
 
-public enum ShapeTreeResourceType {
+export enum ShapeTreeResourceType {
 
-  CONTAINER(ShapeTreeVocabulary.CONTAINER), RESOURCE(ShapeTreeVocabulary.RESOURCE), NON_RDF(ShapeTreeVocabulary.NON_RDF_RESOURCE);
-
-   private readonly value: string;
-
-  public getValue(): string {
-    return this.value;
-  }
-
-  constructor(value: string) {
-    this.value = value;
-  }
+  CONTAINER = "http://www.w3.org/ns/shapetrees#CONTAINER", // ShapeTreeVocabulary.CONTAINER,
+  RESOURCE = "http://www.w3.org/ns/shapetrees#RESOURCE", // ShapeTreeVocabulary.RESOURCE,
+  NON_RDF = "http://www.w3.org/ns/shapetrees#NonRDFResource", // ShapeTreeVocabulary.NON_RDF_RESOURCE,
 }

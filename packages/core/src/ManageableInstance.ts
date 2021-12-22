@@ -1,5 +1,4 @@
 // Corresponding shapetrees-java package: com.janeirodigital.shapetrees.core
-import * as Objects from 'java/util';
 import { ResourceAccessor } from './ResourceAccessor';
 import { ShapeTreeContext } from './ShapeTreeContext';
 import { ManageableResource } from './ManageableResource';
@@ -32,7 +31,7 @@ export class ManageableInstance {
 
    private readonly shapeTreeContext: ShapeTreeContext;
 
-   private readonly wasRequestForManager: boolean;
+   private readonly _wasRequestForManager: boolean;
 
    private readonly manageableResource: ManageableResource;
 
@@ -45,7 +44,7 @@ export class ManageableInstance {
    * @return True when the request targeted the ManagerResource
    */
   public wasRequestForManager(): boolean {
-    return isWasRequestForManager();
+    return this._wasRequestForManager;
   }
 
   /**
@@ -54,7 +53,7 @@ export class ManageableInstance {
    * @return True when the instance is in an unmanaged state
    */
   public isUnmanaged(): boolean {
-    return managerResource instanceof MissingManagerResource;
+    return this.managerResource instanceof MissingManagerResource;
   }
 
   /**
@@ -64,7 +63,7 @@ export class ManageableInstance {
    * @return True when the instance is in an managed state
    */
   public isManaged(): boolean {
-    return !isUnmanaged();
+    return !this.isUnmanaged();
   }
 
   /**
@@ -80,15 +79,15 @@ export class ManageableInstance {
    * @param managerResource Initialized manager resource, which may be a typed sub-class
    */
   public constructor(context: ShapeTreeContext, resourceAccessor: ResourceAccessor, wasRequestForManager: boolean, manageableResource: ManageableResource, managerResource: ManagerResource) {
-    this.shapeTreeContext = Objects.requireNonNull(context, "Must provide a shape tree context");
-    this.resourceAccessor = Objects.requireNonNull(resourceAccessor, "Must provide a resource accessor");
-    this.wasRequestForManager = wasRequestForManager;
-    this.manageableResource = Objects.requireNonNull(manageableResource, "Must provide a manageable resource");
-    this.managerResource = Objects.requireNonNull(managerResource, "Must provide a manager resource");
+    this.shapeTreeContext = context;
+    this.resourceAccessor = resourceAccessor;
+    this._wasRequestForManager = wasRequestForManager;
+    this.manageableResource = manageableResource;
+    this.managerResource = managerResource;
   }
 
   public getTEXT_TURTLE(): string {
-    return this.TEXT_TURTLE;
+    return ManageableInstance.TEXT_TURTLE;
   }
 
   public getResourceAccessor(): ResourceAccessor {
@@ -100,7 +99,7 @@ export class ManageableInstance {
   }
 
   public getWasRequestForManager(): boolean {
-    return this.wasRequestForManager;
+    return this._wasRequestForManager;
   }
 
   public getManageableResource(): ManageableResource {

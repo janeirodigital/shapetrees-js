@@ -1,6 +1,8 @@
 // Corresponding shapetrees-java package: com.janeirodigital.shapetrees.core
 import { ShapeTreeException } from './exceptions/ShapeTreeException';
-import * as ShexSchema from 'fr/inria/lille/shexjava/schema';
+import * as ShExJ from 'shexj';
+type ShexSchema = ShExJ.Schema;
+import * as log from 'loglevel';
 
 /**
  * Optional, static cache for pre-compiled ShEx schemas
@@ -12,57 +14,60 @@ export class SchemaCache {
 
    public static readonly CACHE_IS_NOT_INITIALIZED: string = "Cache is not initialized";
 
-   private static cache: Map<URL, ShexSchema> = null;
+   private static cache: Map<URL, ShexSchema> | null = null;
 
-  public static initializeCache(): void {
-    cache = new Map<>();
-  }
+  public static initializeCache(): void;
+  public static initializeCache(existingCache: Map<URL, ShexSchema>): void;
 
-  public static initializeCache(existingCache: Map<URL, ShexSchema>): void {
-    cache = existingCache;
+  public static initializeCache(existingCache?: Map<URL, ShexSchema>): void {
+    if (existingCache instanceof Map) {
+      SchemaCache.cache = existingCache;
+    } else {
+      SchemaCache.cache = new Map<URL, ShexSchema>();
+    }
   }
 
   public static isInitialized(): boolean {
-    let initialized: boolean = cache != null;
+    let initialized: boolean = SchemaCache.cache != null;
     log.debug("Cache initialized set to {}", initialized);
     return initialized;
   }
 
   public static containsSchema(schemaUrl: URL): boolean /* throws ShapeTreeException */ {
     log.debug("Determining if cache contains schema {}", schemaUrl);
-    if (cache === null) {
-      throw new ShapeTreeException(500, CACHE_IS_NOT_INITIALIZED);
+    if (SchemaCache.cache === null) {
+      throw new ShapeTreeException(500, SchemaCache.CACHE_IS_NOT_INITIALIZED);
     }
-    return cache.containsKey(schemaUrl);
+    return SchemaCache.cache.has(schemaUrl);
   }
 
   public static getSchema(schemaUrl: URL): ShexSchema /* throws ShapeTreeException */ {
     log.debug("Getting schema {}", schemaUrl);
-    if (cache === null) {
-      throw new ShapeTreeException(500, CACHE_IS_NOT_INITIALIZED);
+    if (SchemaCache.cache === null) {
+      throw new ShapeTreeException(500, SchemaCache.CACHE_IS_NOT_INITIALIZED);
     }
-    return cache.get(schemaUrl);
+    return SchemaCache.cache.get(schemaUrl)!;
   }
 
   public static putSchema(schemaUrl: URL, schema: ShexSchema): void /* throws ShapeTreeException */ {
     log.debug("Caching schema {}", schemaUrl.toString());
-    if (cache === null) {
-      throw new ShapeTreeException(500, CACHE_IS_NOT_INITIALIZED);
+    if (SchemaCache.cache === null) {
+      throw new ShapeTreeException(500, SchemaCache.CACHE_IS_NOT_INITIALIZED);
     }
-    cache.put(schemaUrl, schema);
+    SchemaCache.cache.set(schemaUrl, schema);
   }
 
   public static clearCache(): void /* throws ShapeTreeException */ {
-    if (cache === null) {
-      throw new ShapeTreeException(500, CACHE_IS_NOT_INITIALIZED);
+    if (SchemaCache.cache === null) {
+      throw new ShapeTreeException(500, SchemaCache.CACHE_IS_NOT_INITIALIZED);
     }
-    cache.clear();
+    SchemaCache.cache.clear();
   }
 
   public static unInitializeCache(): void /* throws ShapeTreeException */ {
-    if (cache != null) {
-      cache.clear();
+    if (SchemaCache.cache != null) {
+      SchemaCache.cache.clear();
     }
-    cache = null;
+    let cache = null;
   }
 }

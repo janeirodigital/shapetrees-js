@@ -16,12 +16,12 @@ export class ValidatingPutMethodHandler extends AbstractValidatingMethodHandler 
     super(resourceAccessor);
   }
 
-  override public validateRequest(shapeTreeRequest: ShapeTreeRequest): DocumentResponse | null /* throws ShapeTreeException */ {
+  public async validateRequest(shapeTreeRequest: ShapeTreeRequest): Promise<DocumentResponse | null> /* throws ShapeTreeException */ {
     let shapeTreeContext: ShapeTreeContext = RequestHelper.buildContextFromRequest(shapeTreeRequest);
     let targetInstance: ManageableInstance = this.resourceAccessor.getInstance(shapeTreeContext, shapeTreeRequest.getUrl());
     if (targetInstance.wasRequestForManager()) {
       // Target resource is for shape tree manager, manage shape trees to plant and/or unplant
-      return Optional.of(this.requestHandler.manageShapeTree(targetInstance, shapeTreeRequest));
+      return this.requestHandler.manageShapeTree(targetInstance, shapeTreeRequest);
     } else {
       let targetResource: ManageableResource = targetInstance.getManageableResource();
       shapeTreeRequest.setResourceType(RequestHelper.determineResourceType(shapeTreeRequest, targetInstance));
@@ -42,6 +42,6 @@ export class ValidatingPutMethodHandler extends AbstractValidatingMethodHandler 
     }
     // Reaching this point means validation was not necessary
     // Pass the request along with no validation
-    return Optional.empty();
+    return null;
   }
 }

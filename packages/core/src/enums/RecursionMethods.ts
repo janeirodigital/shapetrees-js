@@ -1,5 +1,6 @@
 // Corresponding shapetrees-java package: com.janeirodigital.shapetrees.core.enums
-public enum RecursionMethods {
+export enum RecursionMethods {
 
-  DEPTH_FIRST, BREADTH_FIRST
+  DEPTH_FIRST,
+  BREADTH_FIRST
 }

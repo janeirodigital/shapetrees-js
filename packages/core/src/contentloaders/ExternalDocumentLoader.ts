@@ -15,5 +15,5 @@ export interface ExternalDocumentLoader {
    * @return DocumentResponse representation which contains body and content type
    * @throws ShapeTreeException ShapeTreeException
    */
-  loadExternalDocument(resourceUrl: URL): DocumentResponse /* throws ShapeTreeException */;
+  loadExternalDocument(resourceUrl: URL): Promise<DocumentResponse> /* throws ShapeTreeException */;
 }

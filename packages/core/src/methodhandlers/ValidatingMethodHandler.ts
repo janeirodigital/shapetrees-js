@@ -5,5 +5,5 @@ import { ShapeTreeRequest } from '../ShapeTreeRequest';
 
 export interface ValidatingMethodHandler {
 
-  validateRequest(shapeTreeRequest: ShapeTreeRequest): DocumentResponse | null /* throws ShapeTreeException */;
+  validateRequest(shapeTreeRequest: ShapeTreeRequest): Promise<DocumentResponse | null> /* throws ShapeTreeException */;
 }

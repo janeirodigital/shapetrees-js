@@ -9,7 +9,7 @@ import { ExternalDocumentLoader } from './ExternalDocumentLoader';
  */
 export abstract class DocumentLoaderManager {
 
-  @Setter(onMethod_ = { @Synchronized })
+  // @Setter(onMethod_ = { @Synchronized })
    private static loader: ExternalDocumentLoader;
 
   // Private constructor to offset an implicit public constructor on a utility class
@@ -23,9 +23,14 @@ export abstract class DocumentLoaderManager {
    */
   // @Synchronized
   public static getLoader(): ExternalDocumentLoader /* throws ShapeTreeException */ {
-    if (loader === null) {
+    if (DocumentLoaderManager.loader === null) {
       throw new ShapeTreeException(500, "Must provide a valid ExternalDocumentLoader");
     }
     return DocumentLoaderManager.loader;
+  }
+
+  // @Generated
+  public static setLoader(loader: ExternalDocumentLoader): void {
+    DocumentLoaderManager.loader = loader;
   }
 }

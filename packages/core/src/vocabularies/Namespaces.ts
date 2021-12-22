@@ -1,8 +1,5 @@
 // Corresponding shapetrees-java package: com.janeirodigital.shapetrees.core.vocabularies
-export const class Namespaces {
-
-  private constructor() {
-  }
+export class Namespaces {
 
    public static readonly SHAPETREE: string = "http://www.w3.org/ns/shapetrees#";
 

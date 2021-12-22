@@ -1,15 +1,8 @@
 // Corresponding shapetrees-java package: com.janeirodigital.shapetrees.core.comparators
 import { ShapeTree } from '../ShapeTree';
 import { ShapeTreeFactory } from '../ShapeTreeFactory';
-import * as Comparator from 'java/util';
 
-export class ShapeTreeContainsPriority implements Comparator<URL>, Serializable {
-
-  // Used for sorting shape trees in st:contains by most to least strict
-  // @SneakyThrows
-  override public compare(stUrl1: URL, stUrl2: URL): number {
-    let st1: ShapeTree = ShapeTreeFactory.getShapeTree(stUrl1);
-    let st2: ShapeTree = ShapeTreeFactory.getShapeTree(stUrl2);
+export function ShapeTreeContainsPriority (st1: ShapeTree, st2: ShapeTree): number {
     let st1Priority: number = 0;
     let st2Priority: number = 0;
     if (st1.getShape() != null) {
@@ -26,6 +19,5 @@ export class ShapeTreeContainsPriority implements Comparator<URL>, Serializable 
       st2Priority++;
     }
     // Reversed to ensure ordering goes from most strict to least
-    return Integer.compare(st2Priority, st1Priority);
-  }
+    return st1Priority - st2Priority;
 }

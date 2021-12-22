@@ -1,14 +1,11 @@
 // Corresponding shapetrees-java package: com.janeirodigital.shapetrees.core.exceptions
-export class ShapeTreeException extends Exception {
+export class ShapeTreeException extends Error {
 
    private readonly statusCode: number;
 
-   private readonly message: string;
-
   public constructor(statusCode: number, message: string) {
-    super;
+    super(message);
     this.statusCode = statusCode;
-    this.message = message;
   }
 
   public getStatusCode(): number {

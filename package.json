@@ -4,12 +4,26 @@
   "version": "0.0.1",
   "scripts": {
     "install": "npm run install --workspaces",
-    "build": "npm run build --workspaces"
+    "build": "npm run build --workspaces",
+    "dev-links": "bash -c 'npm link ../../shexSpec/shex.js/packages/{shex-{term,util,visitor,parser,validator,writer},eval-simple-1err,eval-threaded-nerr,shape-map}/'"
   },
   "workspaces": [
     "packages/client-core",
     "packages/core",
     "packages/client-http",
     "packages/jshttp"
-  ]
+  ],
+  "devDependencies": {
+    "@types/node": "^17.0.0"
+  },
+  "dependencies": {
+    "@shexjs/parser": "^1.0.0-alpha.15",
+    "@shexjs/validator": "^1.0.0-alpha.17",
+    "@types/n3": "^1.10.4",
+    "@types/node-fetch": "^3.0.3",
+    "@types/shexj": "^2.1.1",
+    "@types/uuid": "^8.3.3",
+    "loglevel": "^1.8.0",
+    "uuid": "^8.3.2"
+  }
 }

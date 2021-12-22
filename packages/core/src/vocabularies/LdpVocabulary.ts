@@ -1,8 +1,6 @@
 // Corresponding shapetrees-java package: com.janeirodigital.shapetrees.core.vocabularies
-export const class LdpVocabulary {
-
-  private constructor() {
-  }
+import { Namespaces } from './Namespaces';
+export class LdpVocabulary {
 
    public static readonly CONTAINER: string = Namespaces.LDP + "Container";
 

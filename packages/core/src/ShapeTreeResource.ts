@@ -2,11 +2,11 @@
 import { DocumentLoaderManager } from './contentloaders/DocumentLoaderManager';
 import { ShapeTreeException } from './exceptions/ShapeTreeException';
 import { GraphHelper } from './helpers/GraphHelper';
-import * as Model from 'org/apache/jena/rdf/model';
-import * as URI from 'java/net';
-import { removeUrlFragment } from './helpers/GraphHelper/removeUrlFragment';
-import { urlToUri } from './helpers/GraphHelper/urlToUri';
+const { removeUrlFragment } = GraphHelper;
 import { DocumentResponse } from './DocumentResponse';
+import {Store} from "n3";
+import {URL} from "url";
+import * as log from 'loglevel';
 
 /**
  * Represents a resource that contains one or more shape tree definitions. Provides
@@ -20,10 +20,10 @@ export class ShapeTreeResource {
 
    readonly contentType: string;
 
-   readonly model: Model;
+   readonly model: Store;
 
-  @Getter
-   private static readonly localResourceCache: Map<URI, ShapeTreeResource> = new Map<>();
+  // @Getter
+   private static readonly localResourceCache: Map<URL, ShapeTreeResource> = new Map();
 
   /**
    * Looks up and caches the shape tree resource at <code>resourceUrl</code>. Will used cached
@@ -33,19 +33,23 @@ export class ShapeTreeResource {
    * @return Shape tree resource at provided <code>resourceUrl</code>
    * @throws ShapeTreeException
    */
-  public static getShapeTreeResource(resourceUrl: URL): ShapeTreeResource /* throws ShapeTreeException */ {
+  public static async getShapeTreeResource(resourceUrl: URL): Promise<ShapeTreeResource> /* throws ShapeTreeException */ {
     resourceUrl = removeUrlFragment(resourceUrl);
-    if (localResourceCache.containsKey(urlToUri(resourceUrl))) {
+
+    if (ShapeTreeResource.localResourceCache.has(resourceUrl)) {
       log.debug("[{}] previously cached -- returning", resourceUrl);
-      return localResourceCache.get(urlToUri(resourceUrl));
+      return ShapeTreeResource.localResourceCache.get(resourceUrl)!;
     }
-    let externalDocument: DocumentResponse = DocumentLoaderManager.getLoader().loadExternalDocument(resourceUrl);
+
+    let externalDocument: DocumentResponse = await DocumentLoaderManager.getLoader().loadExternalDocument(resourceUrl);
     if (!externalDocument.isExists()) {
       throw new ShapeTreeException(500, "Cannot load shape shape tree resource at " + resourceUrl);
     }
-    let model: Model = GraphHelper.readStringIntoModel(urlToUri(resourceUrl), externalDocument.getBody(), externalDocument.getContentType().orElse("text/turtle"));
-    let resource: ShapeTreeResource = new ShapeTreeResource(resourceUrl, externalDocument.getBody(), externalDocument.getContentType().orElse("text/turtle"), model);
-    localResourceCache.put(urlToUri(resourceUrl), resource);
+
+    let model: Store = await GraphHelper.readStringIntoModel(resourceUrl, externalDocument.getBody(), externalDocument.getContentType() || "text/turtle");
+    let resource: ShapeTreeResource = new ShapeTreeResource(resourceUrl, externalDocument.getBody(), externalDocument.getContentType() || "text/turtle", model);
+
+    ShapeTreeResource.localResourceCache.set(resourceUrl, resource);
     return resource;
   }
 
@@ -53,15 +57,14 @@ export class ShapeTreeResource {
    * Clears the local shape tree resource cache
    */
   public static clearCache(): void {
-    localResourceCache.clear();
+    ShapeTreeResource.localResourceCache.clear();
   }
 
-  public constructor(url: URL, body: string, contentType: string, model: Model, localResourceCache: Map<URI, ShapeTreeResource>) {
+  public constructor(url: URL, body: string, contentType: string, model: Store) {
     this.url = url;
     this.body = body;
     this.contentType = contentType;
     this.model = model;
-    this.localResourceCache = localResourceCache;
   }
 
   public getUrl(): URL {
@@ -76,11 +79,11 @@ export class ShapeTreeResource {
     return this.contentType;
   }
 
-  public getModel(): Model {
+  public getModel(): Store {
     return this.model;
   }
 
-  public getLocalResourceCache(): Map<URI, ShapeTreeResource> {
-    return this.localResourceCache;
+  public getLocalResourceCache(): Map<URL, ShapeTreeResource> {
+    return ShapeTreeResource.localResourceCache;
   }
 }

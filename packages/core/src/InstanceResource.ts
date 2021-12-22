@@ -3,10 +3,8 @@ import { HttpHeaders } from './enums/HttpHeaders';
 import { ShapeTreeResourceType } from './enums/ShapeTreeResourceType';
 import { ShapeTreeException } from './exceptions/ShapeTreeException';
 import { GraphHelper } from './helpers/GraphHelper';
-import * as Graph from 'org/apache/jena/graph';
-import * as URI from 'java/net';
-import { urlToUri } from './helpers/GraphHelper/urlToUri';
 import { ResourceAttributes } from './ResourceAttributes';
+import { Store } from 'n3';
 
 /**
  * InstanceResource is a base class which may represent either a ManageableResource
@@ -56,15 +54,14 @@ export class InstanceResource {
    * @return RDF graph of the InstanceResource body
    * @throws ShapeTreeException
    */
-  public getGraph(baseUrl: URL): Graph /* throws ShapeTreeException */ {
-    if (!this.isExists()) {
+  public getGraph(baseUrl: URL): Promise<Store> | null /* throws ShapeTreeException */ {
+    if (!this.exists) {
       return null;
     }
     if (baseUrl === null) {
       baseUrl = this.url;
     }
-    const baseUri: URI = urlToUri(baseUrl);
-    return GraphHelper.readStringIntoGraph(baseUri, this.getBody(), this.getAttributes().firstValue(HttpHeaders.CONTENT_TYPE.getValue()).orElse(null));
+    return GraphHelper.readStringIntoModel(baseUrl, this.getBody(), this.getAttributes().firstValue(HttpHeaders.CONTENT_TYPE));
   }
 
   public getUrl(): URL {
@@ -87,7 +84,7 @@ export class InstanceResource {
     return this.name;
   }
 
-  public getExists(): boolean {
+  public isExists(): boolean {
     return this.exists;
   }
 }

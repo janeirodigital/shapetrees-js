@@ -10,14 +10,12 @@ import { LinkRelations } from '../enums/LinkRelations';
 import { ShapeTreeResourceType } from '../enums/ShapeTreeResourceType';
 import { ShapeTreeException } from '../exceptions/ShapeTreeException';
 import { LdpVocabulary } from '../vocabularies/LdpVocabulary';
-import * as Graph from 'org/apache/jena/graph';
-import * as ModelFactory from 'org/apache/jena/rdf/model';
-import * as UpdateAction from 'org/apache/jena/update';
-import * as UpdateFactory from 'org/apache/jena/update';
-import * as UpdateRequest from 'org/apache/jena/update';
-import * as MalformedURLException from 'java/net';
-import * as Set from 'java/util';
-import { urlToUri } from './GraphHelper/urlToUri';
+import { Store } from "n3";
+import log from 'loglevel';
+import { N3Sparql } from '../todo/n3-sparql';
+import fetch from 'node-fetch';
+import {GraphHelper} from "./GraphHelper";
+
 
 export class RequestHelper {
 
@@ -27,12 +25,9 @@ export class RequestHelper {
 
    private static readonly DELETE: string = "DELETE";
 
-   private static readonly supportedRDFContentTypes: Set<string> = Set.of("text/turtle", "application/rdf+xml", "application/n-triples", "application/ld+json");
+   private static readonly supportedRDFContentTypes: Set<string> = new Set(["text/turtle", "application/rdf+xml", "application/n-triples", "application/ld+json"]);
 
-   private static readonly supportedSPARQLContentTypes: Set<string> = Set.of("application/sparql-update");
-
-  private constructor() {
-  }
+   private static readonly supportedSPARQLContentTypes: Set<string> = new Set(["application/sparql-update"]);
 
   /**
    * Builds a ShapeTreeContext from the incoming request.  Specifically it retrieves
@@ -42,7 +37,7 @@ export class RequestHelper {
    * @return ShapeTreeContext object populated with authentication details, if present
    */
   public static buildContextFromRequest(shapeTreeRequest: ShapeTreeRequest): ShapeTreeContext {
-    return new ShapeTreeContext(shapeTreeRequest.getHeaderValue(HttpHeaders.AUTHORIZATION.getValue()));
+    return new ShapeTreeContext(shapeTreeRequest.getHeaderValue(HttpHeaders.AUTHORIZATION));
   }
 
   /**
@@ -66,13 +61,13 @@ export class RequestHelper {
    */
   public static determineResourceType(shapeTreeRequest: ShapeTreeRequest, existingResource: ManageableInstance): ShapeTreeResourceType /* throws ShapeTreeException */ {
     let isNonRdf: boolean;
-    if (!shapeTreeRequest.getMethod() === DELETE) {
+    if (shapeTreeRequest.getMethod() !== RequestHelper.DELETE) {
       let incomingRequestContentType: string = shapeTreeRequest.getContentType();
       // Ensure a content-type is present
       if (incomingRequestContentType === null) {
         throw new ShapeTreeException(400, "Content-Type is required");
       }
-      isNonRdf = determineIsNonRdfSource(incomingRequestContentType);
+      isNonRdf = RequestHelper.determineIsNonRdfSource(incomingRequestContentType);
     } else {
       isNonRdf = false;
     }
@@ -81,26 +76,25 @@ export class RequestHelper {
     }
     let isContainer: boolean = false;
     let resourceAlreadyExists: boolean = existingResource.getManageableResource().isExists();
-    if ((shapeTreeRequest.getMethod() === PUT || shapeTreeRequest.getMethod() === PATCH) && resourceAlreadyExists) {
+    if ((shapeTreeRequest.getMethod() === RequestHelper.PUT || shapeTreeRequest.getMethod() === RequestHelper.PATCH) && resourceAlreadyExists) {
       isContainer = existingResource.getManageableResource().isContainer();
     } else if (shapeTreeRequest.getLinkHeaders() != null) {
-      isContainer = getIsContainerFromRequest(shapeTreeRequest);
+      isContainer = RequestHelper.getIsContainerFromRequest(shapeTreeRequest);
     }
     return isContainer ? ShapeTreeResourceType.CONTAINER : ShapeTreeResourceType.RESOURCE;
   }
 
   public static getIncomingFocusNodes(shapeTreeRequest: ShapeTreeRequest, baseUrl: URL): Array<URL> /* throws ShapeTreeException */ {
-    const focusNodeStrings: Array<string> = shapeTreeRequest.getLinkHeaders().allValues(LinkRelations.FOCUS_NODE.getValue());
-    const focusNodeUrls: Array<URL> = new Array<>();
-    if (!focusNodeStrings.isEmpty()) {
+    const focusNodeStrings: Array<string> = shapeTreeRequest.getLinkHeaders().allValues(LinkRelations.FOCUS_NODE);
+    const focusNodeUrls: Array<URL> = new Array();
+    if (focusNodeStrings.length > 0) {
       for (const focusNodeUrlString of focusNodeStrings) {
         try {
           const focusNodeUrl: URL = new URL(baseUrl, focusNodeUrlString);
-          focusNodeUrls.add(focusNodeUrl);
+          focusNodeUrls.push(focusNodeUrl);
         } catch (ex) {
- if (ex instanceof MalformedURLException) {
-           throw new ShapeTreeException(500, "Malformed focus node when resolving <" + focusNodeUrlString + "> against <" + baseUrl + ">");
-         }
+            throw new ShapeTreeException(500, "Malformed focus node when resolving <" + focusNodeUrlString + "> against <" + baseUrl + ">");
+        }
       }
     }
     return focusNodeUrls;
@@ -113,24 +107,23 @@ export class RequestHelper {
    * @throws ShapeTreeException ShapeTreeException
    */
   public static getIncomingTargetShapeTrees(shapeTreeRequest: ShapeTreeRequest, baseUrl: URL): Array<URL> /* throws ShapeTreeException */ {
-    const targetShapeTreeStrings: Array<string> = shapeTreeRequest.getLinkHeaders().allValues(LinkRelations.TARGET_SHAPETREE.getValue());
-    const targetShapeTreeUrls: Array<URL> = new Array<>();
-    if (!targetShapeTreeStrings.isEmpty()) {
+    const targetShapeTreeStrings: Array<string> = shapeTreeRequest.getLinkHeaders().allValues(LinkRelations.TARGET_SHAPETREE);
+    const targetShapeTreeUrls: Array<URL> = new Array();
+    if (targetShapeTreeStrings.length > 0) {
       for (const targetShapeTreeUrlString of targetShapeTreeStrings) {
         try {
           const targetShapeTreeUrl: URL = new URL(targetShapeTreeUrlString);
-          targetShapeTreeUrls.add(targetShapeTreeUrl);
+          targetShapeTreeUrls.push(targetShapeTreeUrl);
         } catch (ex) {
- if (ex instanceof MalformedURLException) {
            throw new ShapeTreeException(500, "Malformed focus node when resolving <" + targetShapeTreeUrlString + "> against <" + baseUrl + ">");
-         }
+        }
       }
     }
     return targetShapeTreeUrls;
   }
 
-  public static getIncomingShapeTreeManager(shapeTreeRequest: ShapeTreeRequest, managerResource: ManagerResource): ShapeTreeManager /* throws ShapeTreeException */ {
-    let incomingBodyGraph: Graph = RequestHelper.getIncomingBodyGraph(shapeTreeRequest, RequestHelper.normalizeSolidResourceUrl(shapeTreeRequest.getUrl(), null, ShapeTreeResourceType.RESOURCE), managerResource);
+  public static async getIncomingShapeTreeManager(shapeTreeRequest: ShapeTreeRequest, managerResource: ManagerResource): Promise<ShapeTreeManager | null> /* throws ShapeTreeException */ {
+    let incomingBodyGraph: Store | null = await RequestHelper.getIncomingBodyGraph(shapeTreeRequest, RequestHelper.normalizeSolidResourceUrl(shapeTreeRequest.getUrl(), null, ShapeTreeResourceType.RESOURCE), managerResource);
     if (incomingBodyGraph === null) {
       return null;
     }
@@ -145,7 +138,7 @@ export class RequestHelper {
    * @return BaseURL to use for RDF Graphs
    * @throws ShapeTreeException ShapeTreeException
    */
-  public static normalizeSolidResourceUrl(url: URL, requestedName: string, resourceType: ShapeTreeResourceType): URL /* throws ShapeTreeException */ {
+  public static normalizeSolidResourceUrl(url: URL, requestedName: string | null, resourceType: ShapeTreeResourceType): URL /* throws ShapeTreeException */ {
     let urlString: string = url.toString();
     if (requestedName != null) {
       urlString += requestedName;
@@ -156,9 +149,8 @@ export class RequestHelper {
     try {
       return new URL(urlString);
     } catch (ex) {
- if (ex instanceof MalformedURLException) {
-       throw new ShapeTreeException(500, "normalized to malformed URL <" + urlString + "> - " + ex.getMessage());
-     }
+       throw new ShapeTreeException(500, "normalized to malformed URL <" + urlString + "> - " + (ex as Error).message); // TODO: why doesn't `(Error<ex>).message` compile?
+    }
   }
 
   /**
@@ -169,13 +161,13 @@ export class RequestHelper {
    * @return Graph representation of request body
    * @throws ShapeTreeException ShapeTreeException
    */
-  public static getIncomingBodyGraph(shapeTreeRequest: ShapeTreeRequest, baseUrl: URL, targetResource: InstanceResource): Graph /* throws ShapeTreeException */ {
+  public static async getIncomingBodyGraph(shapeTreeRequest: ShapeTreeRequest, baseUrl: URL, targetResource: InstanceResource | null): Promise<Store | null> /* throws ShapeTreeException */ {
     log.debug("Reading request body into graph with baseUrl {}", baseUrl);
-    if ((shapeTreeRequest.getResourceType() === ShapeTreeResourceType.NON_RDF && !shapeTreeRequest.getContentType().equalsIgnoreCase("application/sparql-update")) || shapeTreeRequest.getBody() === null || shapeTreeRequest.getBody().length() === 0) {
+    if ((shapeTreeRequest.getResourceType() === ShapeTreeResourceType.NON_RDF && shapeTreeRequest.getContentType().toLowerCase() !== "application/sparql-update") || shapeTreeRequest.getBody() === null || shapeTreeRequest.getBody().length === 0) {
       return null;
     }
-    let targetResourceGraph: Graph = null;
-    if (shapeTreeRequest.getMethod() === PATCH) {
+    let targetResourceGraph: Promise<Store> | null = null;
+    if (shapeTreeRequest.getMethod() === RequestHelper.PATCH) {
       // In the event of a SPARQL PATCH, we get the SPARQL query and evaluate it, passing the
       // resultant graph back to the caller
       if (targetResource != null) {
@@ -184,16 +176,15 @@ export class RequestHelper {
       if (targetResourceGraph === null) {
         // if the target resource doesn't exist or has no content
         log.debug("Existing target resource graph to patch does not exist.  Creating an empty graph.");
-        targetResourceGraph = ModelFactory.createDefaultModel().getGraph();
+        targetResourceGraph = Promise.resolve(new Store());
       }
       // Perform a SPARQL update locally to ensure that resulting graph validates against ShapeTree
-      let updateRequest: UpdateRequest = UpdateFactory.create(shapeTreeRequest.getBody(), baseUrl.toString());
-      UpdateAction.execute(updateRequest, targetResourceGraph);
+      const {deletions, insertions} = new N3Sparql(shapeTreeRequest.getBody(), {baseIRI: baseUrl.toString()}).executeQuery(await targetResourceGraph);
       if (targetResourceGraph === null) {
         throw new ShapeTreeException(400, "No graph after update");
       }
     } else {
-      targetResourceGraph = GraphHelper.readStringIntoGraph(urlToUri(baseUrl), shapeTreeRequest.getBody(), shapeTreeRequest.getContentType());
+      targetResourceGraph = GraphHelper.readStringIntoModel(baseUrl, shapeTreeRequest.getBody(), shapeTreeRequest.getContentType());
     }
     return targetResourceGraph;
   }
@@ -204,7 +195,7 @@ export class RequestHelper {
    * @return Boolean indicating whether it is RDF or not
    */
   private static determineIsNonRdfSource(incomingRequestContentType: string): boolean {
-    return (!supportedRDFContentTypes.contains(incomingRequestContentType.toLowerCase()) && !supportedSPARQLContentTypes.contains(incomingRequestContentType.toLowerCase()));
+    return (!RequestHelper.supportedRDFContentTypes.has(incomingRequestContentType.toLowerCase()) && !RequestHelper.supportedSPARQLContentTypes.has(incomingRequestContentType.toLowerCase()));
   }
 
   /**
@@ -215,12 +206,12 @@ export class RequestHelper {
   private static getIsContainerFromRequest(shapeTreeRequest: ShapeTreeRequest): boolean {
     // First try to determine based on link headers
     if (shapeTreeRequest.getLinkHeaders() != null) {
-      const typeLinks: Array<string> = shapeTreeRequest.getLinkHeaders().allValues(LinkRelations.TYPE.getValue());
-      if (!typeLinks.isEmpty()) {
-        return (typeLinks.contains(LdpVocabulary.CONTAINER) || typeLinks.contains(LdpVocabulary.BASIC_CONTAINER));
+      const typeLinks: Array<string> = shapeTreeRequest.getLinkHeaders().allValues(LinkRelations.TYPE);
+      if (typeLinks.length !== 0) {
+        return (typeLinks.indexOf(LdpVocabulary.CONTAINER) !== -1 || typeLinks.indexOf(LdpVocabulary.BASIC_CONTAINER) !== -1);
       }
     }
     // As a secondary attempt, use slash path semantics
-    return shapeTreeRequest.getUrl().getPath().endsWith("/");
+    return shapeTreeRequest.getUrl().pathname.endsWith("/");
   }
 }
