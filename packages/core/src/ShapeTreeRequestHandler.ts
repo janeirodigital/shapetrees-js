@@ -38,8 +38,14 @@ export class ShapeTreeRequestHandler {
 
   public async manageShapeTree(manageableInstance: ManageableInstance, shapeTreeRequest: ShapeTreeRequest): Promise<DocumentResponse> /* throws ShapeTreeException */ {
     let validationResponse: DocumentResponse | null;
-    let updatedRootManager: ShapeTreeManager = await RequestHelper.getIncomingShapeTreeManager(shapeTreeRequest, manageableInstance.getManagerResource()) || this.fail("No ShapeTreeManager set")!;
-    let existingRootManager: ShapeTreeManager = await manageableInstance.getManagerResource().getManager() || this.fail("No ShapeTreeManager set")!;
+    let updatedRootManager: ShapeTreeManager = this.ensureShapeTreeManagerExists(
+      await RequestHelper.getIncomingShapeTreeManager(shapeTreeRequest, manageableInstance.getManagerResource()),
+      "Expected manager document on ShapeTree-controlled <" + shapeTreeRequest.getUrl().href + ">."
+    ); // TODO: vet and maybe backport to shapetrees-java
+    let existingRootManager: ShapeTreeManager = this.ensureShapeTreeManagerExists(
+      await manageableInstance.getManagerResource().getManager(),
+      "Expected manager document <" + manageableInstance.getManageableResource().getManagerResourceUrl() + ">."
+    ); // TODO: vet and maybe backport to shapetrees-java
     // Determine assignments that have been removed, added, and/or updated
     let delta: ShapeTreeManagerDelta = ShapeTreeManagerDelta.evaluate(existingRootManager, updatedRootManager);
     // It is invalid for a manager resource to be left with no assignments.

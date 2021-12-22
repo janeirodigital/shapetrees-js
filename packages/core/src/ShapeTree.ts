@@ -250,7 +250,7 @@ export class ShapeTree {
   async* getReferencedShapeTrees(control = ShapeTreeGeneratorControl.DEFAULT, via: ShapeTreeGeneratorReference[] = []): AsyncGenerator<ShapeTreeGeneratorResult, void, ShapeTreeGeneratorControl | undefined> {
     // eslint-disable-next-line no-underscore-dangle
     const _RemoteShapeTree = this;
-    yield* walkLocalTree(new URL(this.id), control, via);
+    yield* walkLocalTree(this.id, control, via);
 
     // Iterate over this ShapeTree.
     async function* walkLocalTree(from: URL, control: ShapeTreeGeneratorControl, via: ShapeTreeGeneratorReference[] = []): AsyncGenerator<ShapeTreeGeneratorResult, void, ShapeTreeGeneratorControl | undefined> {
@@ -292,7 +292,7 @@ export class ShapeTree {
         let remote: ShapeTree | null = null;
         // Avoid cycles by looking in via for stepName.
         if (!(via.find((v) => v.target.href === stepName.href))) {
-          if (noHash(stepName).href === noHash(new URL(_RemoteShapeTree.id)).href)
+          if (noHash(stepName).href === noHash(_RemoteShapeTree.id).href)
               // (optimization) In-tree links can recursively call this generator.
             yield* walkLocalTree(stepName, control, via.concat(result));
           else {

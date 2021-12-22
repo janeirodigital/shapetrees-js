@@ -90,7 +90,7 @@ export class RequestHelper {
     if (focusNodeStrings.length > 0) {
       for (const focusNodeUrlString of focusNodeStrings) {
         try {
-          const focusNodeUrl: URL = new URL(baseUrl, focusNodeUrlString);
+          const focusNodeUrl: URL = new URL(baseUrl.href, focusNodeUrlString);
           focusNodeUrls.push(focusNodeUrl);
         } catch (ex) {
             throw new ShapeTreeException(500, "Malformed focus node when resolving <" + focusNodeUrlString + "> against <" + baseUrl + ">");

@@ -42,7 +42,7 @@ export class ManageableResource extends InstanceResource {
   public getParentContainerUrl(): URL /* throws ShapeTreeException */ {
     const rel: string = this.isContainer() ? ".." : ".";
     try {
-      return new URL(this.getUrl(), rel);
+      return new URL(this.getUrl().href, rel);
     } catch (ex: unknown) {
       // ex.code === "ERR_INVALID_URL"
       throw new ShapeTreeException(500, "Malformed focus node when resolving <" + rel + "> against <" + this.getUrl() + ">");
