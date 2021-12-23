@@ -21,7 +21,7 @@ export interface ShapeTreeClient {
    * @return A ShapeTreeManager associated with targetResource
    * @throws ShapeTreeException ShapeTreeException
    */
-  discoverShapeTree(context: ShapeTreeContext, targetResource: URL): ShapeTreeManager | null /* throws ShapeTreeException */;
+  discoverShapeTree(context: ShapeTreeContext, targetResource: URL): Promise<ShapeTreeManager | null> /* throws ShapeTreeException */;
 
   /**
    * Shape Trees, §4.2: This operation marks an existing resource as being managed by one or more shape trees,
@@ -44,7 +44,7 @@ export interface ShapeTreeClient {
    * @return DocumentResponse containing status and response headers/attributes
    * @throws ShapeTreeException ShapeTreeException
    */
-  plantShapeTree(context: ShapeTreeContext, targetResource: URL, targetShapeTree: URL, focusNode: URL): DocumentResponse /* throws ShapeTreeException */;
+  plantShapeTree(context: ShapeTreeContext, targetResource: URL, targetShapeTree: URL, focusNode: URL): Promise<DocumentResponse> /* throws ShapeTreeException */;
 
   /**
    * Shape Trees, §4.3: This operation unassigns a planted root shape tree from a root shape tree instance. If
@@ -57,7 +57,7 @@ export interface ShapeTreeClient {
    * @param targetResource URL of target resource to unplant shape tree from
    * @param targetShapeTree URL of shape tree being unplanted
    */
-  unplantShapeTree(context: ShapeTreeContext, targetResource: URL, targetShapeTree: URL): DocumentResponse /* throws ShapeTreeException */;
+  unplantShapeTree(context: ShapeTreeContext, targetResource: URL, targetShapeTree: URL): Promise<DocumentResponse> /* throws ShapeTreeException */;
 
   /**
    * Creates a resource via HTTP POST that has been validated against the provided shape tree
@@ -65,28 +65,28 @@ export interface ShapeTreeClient {
    * @param parentContainer The container the created resource should be created within
    * @param focusNodes One or more nodes/subjects to use as the focus for shape validation
    * @param targetShapeTrees One or more target shape trees the resource should be validated by
-   * @param proposedName Proposed resource name (aka Slug) for the resulting resource
-   * @param isContainer Specifies whether the newly created resource should be created as a container or not
    * @param bodyString String representation of body of the created resource
    * @param contentType Content type to parse the bodyString parameter as
+   * @param proposedName Proposed resource name (aka Slug) for the resulting resource
+   * @param isContainer Specifies whether the newly created resource should be created as a container or not
    * @return DocumentResponse containing status and response headers/attributes
    * @throws ShapeTreeException ShapeTreeException
    */
-  postManagedInstance(context: ShapeTreeContext, parentContainer: URL, focusNodes: Array<URL>, targetShapeTrees: Array<URL>, proposedName: string, isContainer: boolean, bodyString: string, contentType: string): DocumentResponse /* throws ShapeTreeException */;
+  postManagedInstance(context: ShapeTreeContext, parentContainer: URL, focusNodes: Array<URL>, targetShapeTrees: Array<URL>, bodyString: string, contentType: string, proposedName: string, isContainer: boolean): DocumentResponse /* throws ShapeTreeException */;
 
   /**
    * Creates a resource via HTTP PUT that has been validated against the provided target shape tree
    * @param context ShapeTreeContext that would be used for authentication purposes
    * @param targetResource The target resource to be created or updated
    * @param focusNodes One or more nodes/subjects to use as the focus for shape validation
-   * @param targetShapeTrees The shape trees that a proposed resource to be created should be validated against
-   * @param isContainer Specifies whether a newly created resource should be created as a container or not
    * @param bodyString String representation of the body of the resource to create or update
    * @param contentType Content type to parse the bodyString parameter as
+   * @param targetShapeTrees The shape trees that a proposed resource to be created should be validated against
+   * @param isContainer Specifies whether a newly created resource should be created as a container or not
    * @return DocumentResponse containing status and response header / attributes
    * @throws ShapeTreeException
    */
-  putManagedInstance(context: ShapeTreeContext, targetResource: URL, focusNodes: Array<URL>, targetShapeTrees: Array<URL>, isContainer: boolean, bodyString: string, contentType: string): DocumentResponse /* throws ShapeTreeException */;
+  updateManagedInstance(context: ShapeTreeContext, targetResource: URL, focusNodes: Array<URL>, bodyString: string, contentType: string, targetShapeTrees: Array<URL>, isContainer: boolean): DocumentResponse /* throws ShapeTreeException */;
 
   /**
    * Updates a resource via HTTP PUT that has been validated against an associated shape tree

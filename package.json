@@ -7,8 +7,8 @@
     "dev-links": "bash -c 'npm link ../../shexSpec/shex.js/packages/{shex-{term,util,visitor,parser,validator,writer},eval-simple-1err,eval-threaded-nerr,shape-map}/'"
   },
   "workspaces": [
-    "packages/client-core",
     "packages/core",
+    "packages/client-core",
     "packages/client-http",
     "packages/jshttp"
   ],

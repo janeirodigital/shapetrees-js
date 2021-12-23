@@ -1,33 +1,34 @@
 // Corresponding shapetrees-java package: com.janeirodigital.shapetrees.client.http
-import { ShapeTreeClient } from '@shapetrees/ShapeTreeClient';
-import { ShapeTreeManager } from '@shapetrees/ShapeTreeManager';
-import { ShapeTreeContext } from '@shapetrees/ShapeTreeContext';
-import { ManageableInstance } from '@shapetrees/ManageableInstance';
-import { ManageableResource } from '@shapetrees/ManageableResource';
-import { DocumentResponse } from '@shapetrees/DocumentResponse';
-import { ShapeTree } from '@shapetrees/ShapeTree';
-import { ShapeTreeFactory } from '@shapetrees/ShapeTreeFactory';
-import { ShapeTreeAssignment } from '@shapetrees/ShapeTreeAssignment';
-import { ResourceAttributes } from '@shapetrees/ResourceAttributes';
-import { HttpHeaders } from '@shapetrees/enums/HttpHeaders';
-import { LinkRelations } from '@shapetrees/enums/LinkRelations';
-import { ShapeTreeException } from '@shapetrees/exceptions/ShapeTreeException';
-import * as Lang from 'org/apache/jena/riot';
-import * as RDFDataMgr from 'org/apache/jena/riot';
+import { ShapeTreeClient } from '@shapetrees/client-core/src/ShapeTreeClient';
+import { ShapeTreeManager } from '@shapetrees/core/src/ShapeTreeManager';
+import { ShapeTreeContext } from '@shapetrees/core/src/ShapeTreeContext';
+import { ManageableInstance } from '@shapetrees/core/src/ManageableInstance';
+import { ManageableResource } from '@shapetrees/core/src/ManageableResource';
+import { DocumentResponse } from '@shapetrees/core/src/DocumentResponse';
+import { ShapeTree } from '@shapetrees/core/src/ShapeTree';
+import { ShapeTreeFactory } from '@shapetrees/core/src/ShapeTreeFactory';
+import { ShapeTreeAssignment } from '@shapetrees/core/src/ShapeTreeAssignment';
+import { ResourceAttributes } from '@shapetrees/core/src/ResourceAttributes';
+import { HttpHeaders } from '@shapetrees/core/src/enums/HttpHeaders';
+import { LinkRelations } from '@shapetrees/core/src/enums/LinkRelations';
+import { ShapeTreeException } from '@shapetrees/core/src/exceptions/ShapeTreeException';
 import { Writable } from 'stream';
 import { HttpRequest } from './HttpRequest';
 import { HttpResourceAccessor } from './HttpResourceAccessor';
 import { HttpClient } from './HttpClient';
+import {HttpClientFactoryManager} from "./HttpClientFactoryManager";
+import { Writer } from "n3";
+import * as log from 'loglevel';
 
 export class HttpShapeTreeClient implements ShapeTreeClient {
 
    private useClientShapeTreeValidation: boolean = true;
 
-  override public isShapeTreeValidationSkipped(): boolean {
+  public isShapeTreeValidationSkipped(): boolean {
     return !this.useClientShapeTreeValidation;
   }
 
-  override public skipShapeTreeValidation(skipValidation: boolean): void {
+  public skipShapeTreeValidation(skipValidation: boolean): void {
     this.useClientShapeTreeValidation = !skipValidation;
   }
 
@@ -44,7 +45,7 @@ export class HttpShapeTreeClient implements ShapeTreeClient {
    * @return
    * @throws ShapeTreeException
    */
-  override public discoverShapeTree(context: ShapeTreeContext, targetResource: URL): ShapeTreeManager | null /* throws ShapeTreeException */ {
+  public async discoverShapeTree(context: ShapeTreeContext, targetResource: URL): Promise<ShapeTreeManager | null> /* throws ShapeTreeException */ {
     if (targetResource === null) {
       throw new ShapeTreeException(500, "Must provide a value target resource for discovery");
     }
@@ -55,15 +56,15 @@ export class HttpShapeTreeClient implements ShapeTreeClient {
     let manageableResource: ManageableResource = instance.getManageableResource();
     if (!manageableResource.isExists()) {
       log.debug("Target resource for discovery {} does not exist", targetResource);
-      return Optional.empty();
+      return null;
     }
     if (instance.wasRequestForManager()) {
       throw new ShapeTreeException(500, "Discovery target must not be a shape tree manager resource");
     }
     if (instance.isUnmanaged()) {
-      return Optional.empty();
+      return null;
     }
-    return Optional.of(instance.getManagerResource().getManager());
+    return instance.getManagerResource().getManager();
   }
 
   /**
@@ -86,7 +87,7 @@ export class HttpShapeTreeClient implements ShapeTreeClient {
    * @return The URL of the Shape Tree Manager that was planted for targetResource
    * @throws ShapeTreeException
    */
-  override public plantShapeTree(context: ShapeTreeContext, targetResource: URL, targetShapeTree: URL, focusNode: URL): DocumentResponse /* throws ShapeTreeException */ {
+  public async plantShapeTree(context: ShapeTreeContext, targetResource: URL, targetShapeTree: URL, focusNode: URL): Promise<DocumentResponse> /* throws ShapeTreeException */ {
     if (context === null || targetResource === null || targetShapeTree === null) {
       throw new ShapeTreeException(500, "Must provide a valid context, target resource, and target shape tree to the plant shape tree");
     }
@@ -94,17 +95,17 @@ export class HttpShapeTreeClient implements ShapeTreeClient {
     log.debug("Focus node: {}", focusNode === null ? "None provided" : focusNode);
     const resourceAccessor: HttpResourceAccessor = new HttpResourceAccessor();
     // Lookup the shape tree
-    let shapeTree: ShapeTree = ShapeTreeFactory.getShapeTree(targetShapeTree);
+    let shapeTree: ShapeTree = await ShapeTreeFactory.getShapeTree(targetShapeTree);
     // Lookup the target resource
     let instance: ManageableInstance = resourceAccessor.getInstance(context, targetResource);
     let manageableResource: ManageableResource = instance.getManageableResource();
     if (!manageableResource.isExists()) {
-      return new DocumentResponse(null, "Cannot find target resource to plant: " + targetResource, 404);
+      return new DocumentResponse(new ResourceAttributes(), "Cannot find target resource to plant: " + targetResource, 404);
     }
     let manager: ShapeTreeManager;
     let managerResourceUrl: URL = instance.getManagerResource().getUrl();
     if (instance.isManaged()) {
-      manager = instance.getManagerResource().getManager();
+      manager = HttpResourceAccessor.expectNotNull(await instance.getManagerResource().getManager(), () => new Error("Expected a manager at <" + managerResourceUrl + ">."));
     } else {
       manager = new ShapeTreeManager(managerResourceUrl);
     }
@@ -114,77 +115,82 @@ export class HttpShapeTreeClient implements ShapeTreeClient {
     // Add the assignment to the manager
     manager.addAssignment(assignment);
     // Get an RDF version of the manager stored in a turtle string
-    let sw: Writable = new Writable();
-    RDFDataMgr.write(sw, manager.getGraph(), Lang.TURTLE);
+    const writer = new Writer();
+    writer.addQuads(manager.getGraph().getQuads(null, null, null, null));
+    let asText: string;
+    writer.end((err, res) => {
+      if (err) throw err;
+      asText = res;
+    })
     // Build an HTTP PUT request with the manager graph in turtle as the content body + link header
     let fetcher: HttpClient = HttpClientFactoryManager.getFactory().get(this.useClientShapeTreeValidation);
     let headers: ResourceAttributes = new ResourceAttributes();
-    headers.maybeSet(HttpHeaders.AUTHORIZATION.getValue(), context.getAuthorizationHeaderValue());
-    return fetcher.fetchShapeTreeResponse(new HttpRequest("PUT", managerResourceUrl, headers, sw.toString(), "text/turtle"));
+    headers.maybeSet(HttpHeaders.AUTHORIZATION, context.getAuthorizationHeaderValue());
+    return fetcher.fetchShapeTreeResponse(new HttpRequest("PUT", managerResourceUrl, headers, asText!, "text/turtle"));
   }
 
-  override public postManagedInstance(context: ShapeTreeContext, parentContainer: URL, focusNodes: Array<URL>, targetShapeTrees: Array<URL>, proposedResourceName: string, isContainer: boolean, bodyString: string, contentType: string): DocumentResponse /* throws ShapeTreeException */ {
+  public postManagedInstance(context: ShapeTreeContext, parentContainer: URL, focusNodes: Array<URL>, targetShapeTrees: Array<URL>, bodyString: string, contentType: string, proposedResourceName: string, isContainer: boolean): DocumentResponse /* throws ShapeTreeException */ {
     if (context === null || parentContainer === null) {
       throw new ShapeTreeException(500, "Must provide a valid context and parent container to post shape tree instance");
     }
     log.debug("POST-ing shape tree instance to {}", parentContainer);
     log.debug("Proposed name: {}", proposedResourceName === null ? "None provided" : proposedResourceName);
-    log.debug("Target Shape Tree: {}", targetShapeTrees === null || targetShapeTrees.isEmpty() ? "None provided" : targetShapeTrees.toString());
-    log.debug("Focus Node: {}", focusNodes === null || focusNodes.isEmpty() ? "None provided" : focusNodes.toString());
+    log.debug("Target Shape Tree: {}", targetShapeTrees === null || targetShapeTrees.length === 0 ? "None provided" : targetShapeTrees.toString());
+    log.debug("Focus Node: {}", focusNodes === null || focusNodes.length === 0 ? "None provided" : focusNodes.toString());
     let fetcher: HttpClient = HttpClientFactoryManager.getFactory().get(this.useClientShapeTreeValidation);
-    let headers: ResourceAttributes = getCommonHeaders(context, focusNodes, targetShapeTrees, isContainer, proposedResourceName, contentType);
+    let headers: ResourceAttributes = this.getCommonHeaders(context, focusNodes, targetShapeTrees, isContainer, proposedResourceName, contentType);
     return fetcher.fetchShapeTreeResponse(new HttpRequest("POST", parentContainer, headers, bodyString, contentType));
   }
 
   // Create via HTTP PUT
-  override public putManagedInstance(context: ShapeTreeContext, resourceUrl: URL, focusNodes: Array<URL>, targetShapeTrees: Array<URL>, isContainer: boolean, bodyString: string, contentType: string): DocumentResponse /* throws ShapeTreeException */ {
+  public updateManagedInstance(context: ShapeTreeContext, resourceUrl: URL, focusNodes: Array<URL>, bodyString: string, contentType: string, targetShapeTrees: Array<URL>, isContainer: boolean): DocumentResponse /* throws ShapeTreeException */ {
     if (context === null || resourceUrl === null) {
       throw new ShapeTreeException(500, "Must provide a valid context and target resource to create shape tree instance via PUT");
     }
     log.debug("Creating shape tree instance via PUT at {}", resourceUrl);
-    log.debug("Target Shape Tree: {}", targetShapeTrees === null || targetShapeTrees.isEmpty() ? "None provided" : targetShapeTrees.toString());
-    log.debug("Focus Node: {}", focusNodes === null || focusNodes.isEmpty() ? "None provided" : focusNodes.toString());
+    log.debug("Target Shape Tree: {}", targetShapeTrees === null || targetShapeTrees.length === 0 ? "None provided" : targetShapeTrees.toString());
+    log.debug("Focus Node: {}", focusNodes === null || focusNodes.length === 0 ? "None provided" : focusNodes.toString());
     let fetcher: HttpClient = HttpClientFactoryManager.getFactory().get(this.useClientShapeTreeValidation);
-    let headers: ResourceAttributes = getCommonHeaders(context, focusNodes, targetShapeTrees, isContainer, null, contentType);
+    let headers: ResourceAttributes = this.getCommonHeaders(context, focusNodes, targetShapeTrees, isContainer, null, contentType);
     return fetcher.fetchShapeTreeResponse(new HttpRequest("PUT", resourceUrl, headers, bodyString, contentType));
   }
 
   // Update via HTTP PUT
-  override public putManagedInstance(context: ShapeTreeContext, resourceUrl: URL, focusNodes: Array<URL>, bodyString: string, contentType: string): DocumentResponse /* throws ShapeTreeException */ {
+  public putManagedInstance(context: ShapeTreeContext, resourceUrl: URL, focusNodes: Array<URL>, bodyString: string, contentType: string): DocumentResponse /* throws ShapeTreeException */ {
     if (context === null || resourceUrl === null) {
       throw new ShapeTreeException(500, "Must provide a valid context and target resource to update shape tree instance via PUT");
     }
     log.debug("Updating shape tree instance via PUT at {}", resourceUrl);
-    log.debug("Focus Node: {}", focusNodes === null || focusNodes.isEmpty() ? "None provided" : focusNodes.toString());
+    log.debug("Focus Node: {}", focusNodes === null || focusNodes.length === 0 ? "None provided" : focusNodes.toString());
     let fetcher: HttpClient = HttpClientFactoryManager.getFactory().get(this.useClientShapeTreeValidation);
-    let headers: ResourceAttributes = getCommonHeaders(context, focusNodes, null, null, null, contentType);
+    let headers: ResourceAttributes = this.getCommonHeaders(context, focusNodes, null, null, null, contentType);
     return fetcher.fetchShapeTreeResponse(new HttpRequest("PUT", resourceUrl, headers, bodyString, contentType));
   }
 
-  override public patchManagedInstance(context: ShapeTreeContext, resourceUrl: URL, focusNodes: Array<URL>, patchString: string): DocumentResponse /* throws ShapeTreeException */ {
+  public patchManagedInstance(context: ShapeTreeContext, resourceUrl: URL, focusNodes: Array<URL>, patchString: string): DocumentResponse /* throws ShapeTreeException */ {
     if (context === null || resourceUrl === null || patchString === null) {
       throw new ShapeTreeException(500, "Must provide a valid context, target resource, and PATCH expression to PATCH shape tree instance");
     }
     log.debug("PATCH-ing shape tree instance at {}", resourceUrl);
     log.debug("PATCH String: {}", patchString);
-    log.debug("Focus Node: {}", focusNodes === null || focusNodes.isEmpty() ? "None provided" : focusNodes.toString());
+    log.debug("Focus Node: {}", focusNodes === null || focusNodes.length === 0 ? "None provided" : focusNodes.toString());
     let contentType: string = "application/sparql-update";
     let fetcher: HttpClient = HttpClientFactoryManager.getFactory().get(this.useClientShapeTreeValidation);
-    let headers: ResourceAttributes = getCommonHeaders(context, focusNodes, null, null, null, contentType);
+    let headers: ResourceAttributes = this.getCommonHeaders(context, focusNodes, null, null, null, contentType);
     return fetcher.fetchShapeTreeResponse(new HttpRequest("PATCH", resourceUrl, headers, patchString, contentType));
   }
 
-  override public deleteManagedInstance(context: ShapeTreeContext, resourceUrl: URL): DocumentResponse /* throws ShapeTreeException */ {
+  public deleteManagedInstance(context: ShapeTreeContext, resourceUrl: URL): DocumentResponse /* throws ShapeTreeException */ {
     if (context === null || resourceUrl === null) {
       throw new ShapeTreeException(500, "Must provide a valid context and target resource to DELETE shape tree instance");
     }
     log.debug("DELETE-ing shape tree instance at {}", resourceUrl);
     let fetcher: HttpClient = HttpClientFactoryManager.getFactory().get(this.useClientShapeTreeValidation);
-    let headers: ResourceAttributes = getCommonHeaders(context, null, null, null, null, null);
+    let headers: ResourceAttributes = this.getCommonHeaders(context, null, null, null, null, null);
     return fetcher.fetchShapeTreeResponse(new HttpRequest("DELETE", resourceUrl, headers, null, null));
   }
 
-  override public unplantShapeTree(context: ShapeTreeContext, targetResource: URL, targetShapeTree: URL): DocumentResponse /* throws ShapeTreeException */ {
+  public async unplantShapeTree(context: ShapeTreeContext, targetResource: URL, targetShapeTree: URL): Promise<DocumentResponse> /* throws ShapeTreeException */ {
     if (context === null || targetResource === null || targetShapeTree === null) {
       throw new ShapeTreeException(500, "Must provide a valid context, target resource, and target shape tree to unplant");
     }
@@ -200,12 +206,12 @@ export class HttpShapeTreeClient implements ShapeTreeClient {
       return new DocumentResponse(null, "Cannot unplant target resource that is not managed by a shapetree: " + targetResource, 500);
     }
     // Remove assignment from manager that corresponds with the provided shape tree
-    let manager: ShapeTreeManager = instance.getManagerResource().getManager();
+    let manager: ShapeTreeManager | null = HttpResourceAccessor.expectNotNull(await instance.getManagerResource().getManager(), () => new ShapeTreeException(500, "expected ShapeTree manager to unplant"));
     manager.removeAssignmentForShapeTree(targetShapeTree);
     let method: string;
-    let body: string;
-    let contentType: string;
-    if (manager.getAssignments().isEmpty()) {
+    let body: string | null;
+    let contentType: string | null;
+    if (manager.getAssignments().length === 0) {
       method = "DELETE";
       body = null;
       contentType = null;
@@ -213,40 +219,45 @@ export class HttpShapeTreeClient implements ShapeTreeClient {
       // Build an HTTP PUT request with the manager graph in turtle as the content body + link header
       method = "PUT";
       // Get a RDF version of the manager stored in a turtle string
-      let sw: Writable = new Writable();
-      RDFDataMgr.write(sw, manager.getGraph(), Lang.TURTLE);
-      body = sw.toString();
+      const writer = new Writer();
+      writer.addQuads(manager.getGraph().getQuads(null, null, null, null));
+      let asText: string;
+      writer.end((err, res) => {
+        if (err) throw err;
+        asText = res;
+      })
+      body = asText!;
       contentType = "text/turtle";
     }
     let fetcher: HttpClient = HttpClientFactoryManager.getFactory().get(this.useClientShapeTreeValidation);
     return fetcher.fetchShapeTreeResponse(new HttpRequest(method, manager.getId(), // why no getCommonHeaders(context, null, null, null, null, null)
-    null, body, contentType));
+        null, body, contentType));
   }
 
-  private getCommonHeaders(context: ShapeTreeContext, focusNodes: Array<URL>, targetShapeTrees: Array<URL>, isContainer: boolean, proposedResourceName: string, contentType: string): ResourceAttributes {
+  private getCommonHeaders(context: ShapeTreeContext, focusNodes: Array<URL> | null, targetShapeTrees: Array<URL> | null, isContainer: boolean | null, proposedResourceName: string | null, contentType: string | null): ResourceAttributes {
     let ret: ResourceAttributes = new ResourceAttributes();
-    if (context.getAuthorizationHeaderValue() != null) {
-      ret.maybeSet(HttpHeaders.AUTHORIZATION.getValue(), context.getAuthorizationHeaderValue());
+    if (context.getAuthorizationHeaderValue() !== null) {
+      ret.maybeSet(HttpHeaders.AUTHORIZATION, context.getAuthorizationHeaderValue());
     }
-    if (isContainer != null) {
-      let resourceTypeUrl: string = Boolean.TRUE === isContainer ? "http://www.w3.org/ns/ldp#Container" : "http://www.w3.org/ns/ldp#Resource";
-      ret.maybeSet(HttpHeaders.LINK.getValue(), "<" + resourceTypeUrl + ">; rel=\"type\"");
+    if (isContainer !== null) {
+      let resourceTypeUrl: string = isContainer ? "http://www.w3.org/ns/ldp#Container" : "http://www.w3.org/ns/ldp#Resource";
+      ret.maybeSet(HttpHeaders.LINK, "<" + resourceTypeUrl + ">; rel=\"type\"");
     }
-    if (focusNodes != null && !focusNodes.isEmpty()) {
+    if (focusNodes !== null && focusNodes.length !== 0) {
       for (const focusNode of focusNodes) {
-        ret.maybeSet(HttpHeaders.LINK.getValue(), "<" + focusNode + ">; rel=\"" + LinkRelations.FOCUS_NODE.getValue() + "\"");
+        ret.maybeSet(HttpHeaders.LINK, "<" + focusNode + ">; rel=\"" + LinkRelations.FOCUS_NODE + "\"");
       }
     }
-    if (targetShapeTrees != null && !targetShapeTrees.isEmpty()) {
+    if (targetShapeTrees !== null && targetShapeTrees.length !== 0) {
       for (const targetShapeTree of targetShapeTrees) {
-        ret.maybeSet(HttpHeaders.LINK.getValue(), "<" + targetShapeTree + ">; rel=\"" + LinkRelations.TARGET_SHAPETREE.getValue() + "\"");
+        ret.maybeSet(HttpHeaders.LINK, "<" + targetShapeTree + ">; rel=\"" + LinkRelations.TARGET_SHAPETREE + "\"");
       }
     }
-    if (proposedResourceName != null) {
-      ret.maybeSet(HttpHeaders.SLUG.getValue(), proposedResourceName);
+    if (proposedResourceName !== null) {
+      ret.maybeSet(HttpHeaders.SLUG, proposedResourceName);
     }
-    if (contentType != null) {
-      ret.maybeSet(HttpHeaders.CONTENT_TYPE.getValue(), contentType);
+    if (contentType !== null) {
+      ret.maybeSet(HttpHeaders.CONTENT_TYPE, contentType);
     }
     return ret;
   }

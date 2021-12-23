@@ -178,7 +178,7 @@ export class ResourceAttributes {
     let values: Array<string> | undefined = this.toMultimap().get(name);
     // Making unmodifiable list out of empty in order to make a list which
     // throws UOE unconditionally
-    return values !== undefined ? values : [];
+    return values !== undefined ? values : []; // TODO: some callers, e.g. HttpResourceAccessor.getResourceTypeFromHeaders, expect null
   }
 
   public toString(): string {

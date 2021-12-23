@@ -23,5 +23,8 @@
   "homepage": "https://github.com/janeirodigital/shapetrees-js#readme",
   "devDependencies": {
     "typescript": "^4.5.3"
+  },
+  "dependencies": {
+    "@shapetrees/core": "^0.0.1"
   }
 }

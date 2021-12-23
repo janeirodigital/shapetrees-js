@@ -66,7 +66,7 @@ export interface ResourceAccessor {
    * @return List of contained {@link ManageableInstance}s
    * @throws ShapeTreeException
    */
-  getContainedInstances(context: ShapeTreeContext, containerResourceUrl: URL): Array<ManageableInstance> /* throws ShapeTreeException */;
+  getContainedInstances(context: ShapeTreeContext, containerResourceUrl: URL): Promise<Array<ManageableInstance>> /* throws ShapeTreeException */;
 
   /**
    * Gets a specific {@link InstanceResource} identified by the provided <code>resourceUrl</code>.

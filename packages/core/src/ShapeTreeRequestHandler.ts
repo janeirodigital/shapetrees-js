@@ -244,7 +244,7 @@ export class ShapeTreeRequestHandler {
       // If the container is not empty, perform a recursive, depth first validation and assignment for each
       // contained resource by recursively calling this method (assignShapeTreeToResource)
       // TODO - Provide a configurable maximum limit on contained resources for a recursive plant, generate ShapeTreeException
-      let containedResources: Array<ManageableInstance> = this.resourceAccessor.getContainedInstances(shapeTreeContext, manageableInstance.getManageableResource().getUrl());
+      let containedResources: Array<ManageableInstance> = await this.resourceAccessor.getContainedInstances(shapeTreeContext, manageableInstance.getManageableResource().getUrl());
       if (containedResources.length !== 0) {
         // Evaluate containers, then resources
         containedResources = containedResources.sort(ResourceTypeAssignmentPriority);
@@ -283,7 +283,7 @@ export class ShapeTreeRequestHandler {
     if (manageableInstance.getManageableResource().isContainer() && assignedShapeTree.getContains().length !== 0) {
 
       // TODO - Should there also be a configurable maximum limit on unplanting?
-      let containedResources: Array<ManageableInstance> = this.resourceAccessor.getContainedInstances(shapeTreeContext, manageableInstance.getManageableResource().getUrl());
+      let containedResources: Array<ManageableInstance> = await this.resourceAccessor.getContainedInstances(shapeTreeContext, manageableInstance.getManageableResource().getUrl());
       // If the container is not empty
       if (containedResources.length !== 0) {
         // Sort contained resources so that containers are evaluated first, then resources

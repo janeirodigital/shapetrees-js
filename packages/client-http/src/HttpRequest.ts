@@ -1,5 +1,5 @@
 // Corresponding shapetrees-java package: com.janeirodigital.shapetrees.client.http
-import { ResourceAttributes } from '@shapetrees/ResourceAttributes';
+import { ResourceAttributes } from '@shapetrees/core/src/ResourceAttributes';
 
 export class HttpRequest {
 
@@ -7,13 +7,13 @@ export class HttpRequest {
 
    public resourceURL: URL;
 
-   public headers: ResourceAttributes;
+   public headers: ResourceAttributes | null;
 
-   public body: string;
+   public body: string | null;
 
-   public contentType: string;
+   public contentType: string | null;
 
-  public constructor(method: string, resourceURL: URL, headers: ResourceAttributes, body: string, contentType: string) {
+  public constructor(method: string, resourceURL: URL, headers: ResourceAttributes | null, body: string | null, contentType: string | null) {
     this.method = method;
     this.resourceURL = resourceURL;
     this.headers = headers;

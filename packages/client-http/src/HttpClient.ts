@@ -1,22 +1,12 @@
 // Corresponding shapetrees-java package: com.janeirodigital.shapetrees.client.http
-import { DocumentResponse } from '@shapetrees/DocumentResponse';
-import { ShapeTreeException } from '@shapetrees/exceptions/ShapeTreeException';
+import { DocumentResponse } from '@shapetrees/core/src/DocumentResponse';
+import { ShapeTreeException } from '@shapetrees/core/src/exceptions/ShapeTreeException';
 import { HttpRequest } from './HttpRequest';
 
 /**
  * abstract base class for ShapeTree library network drivers
  */
 export interface HttpClient {
-
-   GET: string = "GET";
-
-   PUT: string = "PUT";
-
-   POST: string = "POST";
-
-   PATCH: string = "PATCH";
-
-   DELETE: string = "DELETE";
 
   /**
    * Execute an HTTP request to create a DocumentResponse object
