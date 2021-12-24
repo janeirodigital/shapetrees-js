@@ -46,8 +46,8 @@ export class ShapeTreeResource {
       throw new ShapeTreeException(500, "Cannot load shape shape tree resource at " + resourceUrl);
     }
 
-    let model: Store = await GraphHelper.readStringIntoModel(resourceUrl, externalDocument.getBody(), externalDocument.getContentType() || "text/turtle");
-    let resource: ShapeTreeResource = new ShapeTreeResource(resourceUrl, externalDocument.getBody(), externalDocument.getContentType() || "text/turtle", model);
+    let model: Store = await GraphHelper.readStringIntoModel(resourceUrl, externalDocument.getBody()!, externalDocument.getContentType() || "text/turtle"); // TODO: body could be null
+    let resource: ShapeTreeResource = new ShapeTreeResource(resourceUrl, externalDocument.getBody()!, externalDocument.getContentType() || "text/turtle", model); // TODO: body could be null
 
     ShapeTreeResource.localResourceCache.set(resourceUrl, resource);
     return resource;

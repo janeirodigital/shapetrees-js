@@ -6,7 +6,7 @@ export class DocumentResponse {
 
    private readonly resourceAttributes: ResourceAttributes | null;
 
-   private readonly body: string;
+   private readonly body: string | null;
 
    private readonly statusCode: number;
 
@@ -21,7 +21,7 @@ export class DocumentResponse {
     return this.statusCode / 100 === 2;
   }
 
-  public constructor(resourceAttributes: ResourceAttributes | null, body: string, statusCode: number) {
+  public constructor(resourceAttributes: ResourceAttributes | null, body: string | null, statusCode: number) {
     this.resourceAttributes = resourceAttributes;
     this.body = body;
     this.statusCode = statusCode;
@@ -31,7 +31,7 @@ export class DocumentResponse {
     return this.resourceAttributes;
   }
 
-  public getBody(): string {
+  public getBody(): string | null {
     return this.body;
   }
 

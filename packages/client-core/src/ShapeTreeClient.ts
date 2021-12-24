@@ -72,7 +72,7 @@ export interface ShapeTreeClient {
    * @return DocumentResponse containing status and response headers/attributes
    * @throws ShapeTreeException ShapeTreeException
    */
-  postManagedInstance(context: ShapeTreeContext, parentContainer: URL, focusNodes: Array<URL>, targetShapeTrees: Array<URL>, bodyString: string, contentType: string, proposedName: string, isContainer: boolean): DocumentResponse /* throws ShapeTreeException */;
+  postManagedInstance(context: ShapeTreeContext, parentContainer: URL, focusNodes: Array<URL>, targetShapeTrees: Array<URL>, bodyString: string, contentType: string, proposedName: string, isContainer: boolean): Promise<DocumentResponse> /* throws ShapeTreeException */;
 
   /**
    * Creates a resource via HTTP PUT that has been validated against the provided target shape tree
@@ -86,7 +86,7 @@ export interface ShapeTreeClient {
    * @return DocumentResponse containing status and response header / attributes
    * @throws ShapeTreeException
    */
-  updateManagedInstance(context: ShapeTreeContext, targetResource: URL, focusNodes: Array<URL>, bodyString: string, contentType: string, targetShapeTrees: Array<URL>, isContainer: boolean): DocumentResponse /* throws ShapeTreeException */;
+  updateManagedInstance(context: ShapeTreeContext, targetResource: URL, focusNodes: Array<URL>, bodyString: string, contentType: string, targetShapeTrees: Array<URL>, isContainer: boolean): Promise<DocumentResponse> /* throws ShapeTreeException */;
 
   /**
    * Updates a resource via HTTP PUT that has been validated against an associated shape tree
@@ -98,7 +98,7 @@ export interface ShapeTreeClient {
    * @return DocumentResponse containing status and response header / attributes
    * @throws ShapeTreeException
    */
-  putManagedInstance(context: ShapeTreeContext, targetResource: URL, focusNodes: Array<URL>, bodyString: string, contentType: string): DocumentResponse /* throws ShapeTreeException */;
+  putManagedInstance(context: ShapeTreeContext, targetResource: URL, focusNodes: Array<URL>, bodyString: string, contentType: string): Promise<DocumentResponse> /* throws ShapeTreeException */;
 
   /**
    * Updates a resource via HTTP PATCH that has been validated against an associated shape tree
@@ -109,7 +109,7 @@ export interface ShapeTreeClient {
    * @return DocumentResponse containing status and response header / attributes
    * @throws ShapeTreeException
    */
-  patchManagedInstance(context: ShapeTreeContext, targetResource: URL, focusNodes: Array<URL>, patchString: string): DocumentResponse /* throws ShapeTreeException */;
+  patchManagedInstance(context: ShapeTreeContext, targetResource: URL, focusNodes: Array<URL>, patchString: string): Promise<DocumentResponse> /* throws ShapeTreeException */;
 
   /**
    * Deletes an existing resource.  Provided as a convenience - no validation is performed
@@ -118,7 +118,7 @@ export interface ShapeTreeClient {
    * @return DocumentResponse containing status and response headers/attributes
    * @throws ShapeTreeException ShapeTreeException
    */
-  deleteManagedInstance(context: ShapeTreeContext, resourceUrl: URL): DocumentResponse /* throws ShapeTreeException */;
+  deleteManagedInstance(context: ShapeTreeContext, resourceUrl: URL): Promise<DocumentResponse> /* throws ShapeTreeException */;
 
   /**
    * Indicates whether validation is currently being applied on the client

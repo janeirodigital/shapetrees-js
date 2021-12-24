@@ -48,8 +48,8 @@ export class HttpResourceAccessor implements ResourceAccessor {
    * @param resourceUrl URL of the target resource
    * @return {@link ManageableInstance} including {@link ManageableResource} and {@link ManagerResource}
    */
-  public getInstance(context: ShapeTreeContext, resourceUrl: URL): ManageableInstance /* throws ShapeTreeException */ {
-    let resource: InstanceResource = this.getResource(context, resourceUrl);
+  public async getInstance(context: ShapeTreeContext, resourceUrl: URL): Promise<ManageableInstance> /* throws ShapeTreeException */ {
+    let resource: InstanceResource = await this.getResource(context, resourceUrl);
     if (resource instanceof MissingManageableResource) {
       // Get is for a manageable resource that doesn't exist
       return this.getInstanceFromMissingManageableResource(context, <MissingManageableResource>resource);
@@ -89,8 +89,8 @@ export class HttpResourceAccessor implements ResourceAccessor {
    * @return {@link ManageableInstance} including {@link UnmanagedResource}|{@link MissingManageableResource} and {@link MissingManagerResource}
    * @throws ShapeTreeException
    */
-  private getInstanceFromMissingManagerResource(context: ShapeTreeContext, missing: MissingManagerResource): ManageableInstance /* throws ShapeTreeException */ {
-    let manageable: InstanceResource = this.getResource(context, this.calculateManagedUrl(missing.getUrl(), missing.getAttributes()));
+  private async getInstanceFromMissingManagerResource(context: ShapeTreeContext, missing: MissingManagerResource): Promise<ManageableInstance> /* throws ShapeTreeException */ {
+    let manageable: InstanceResource = await this.getResource(context, this.calculateManagedUrl(missing.getUrl(), missing.getAttributes()));
     if (manageable.isExists()) {
       let unmanaged: UnmanagedResource = new UnmanagedResource(<ManageableResource>manageable, missing.getUrl());
       return new ManageableInstance(context, this, true, unmanaged, missing);
@@ -109,9 +109,9 @@ export class HttpResourceAccessor implements ResourceAccessor {
    * @return {@link ManageableInstance} including {@link UnmanagedResource}|{@link ManagedResource} and {@link ManagerResource}|{@link MissingManagerResource}
    * @throws ShapeTreeException
    */
-  private getInstanceFromManageableResource(context: ShapeTreeContext, manageable: ManageableResource): ManageableInstance /* throws ShapeTreeException */ {
+  private async getInstanceFromManageableResource(context: ShapeTreeContext, manageable: ManageableResource): Promise<ManageableInstance> /* throws ShapeTreeException */ {
     let managerResourceUrl: URL = HttpResourceAccessor.expectNotNull(manageable.getManagerResourceUrl(), () => new ShapeTreeException(500, "Cannot discover shape tree manager for " + manageable.getUrl()));
-    let manager: InstanceResource = this.getResource(context, managerResourceUrl);
+    let manager: InstanceResource = await this.getResource(context, managerResourceUrl);
     if (manager instanceof MissingManagerResource) {
       // If the manager does exist it is unmanaged - Get and store both in instance
       let unmanaged: UnmanagedResource = new UnmanagedResource(manageable, manager.getUrl());
@@ -133,8 +133,8 @@ export class HttpResourceAccessor implements ResourceAccessor {
    * @return {@link ManageableInstance} including {@link ManagerResource} and {@link ManagedResource}
    * @throws ShapeTreeException
    */
-  private getInstanceFromManagerResource(context: ShapeTreeContext, manager: ManagerResource): ManageableInstance /* throws ShapeTreeException */ {
-    let manageable: InstanceResource = this.getResource(context, manager.getManagedResourceUrl());
+  private async getInstanceFromManagerResource(context: ShapeTreeContext, manager: ManagerResource): Promise<ManageableInstance> /* throws ShapeTreeException */ {
+    let manageable: InstanceResource = await this.getResource(context, manager.getManagedResourceUrl());
     if (manageable instanceof MissingManageableResource) {
       throw new ShapeTreeException(500, "Cannot have a shape tree manager at " + manager.getUrl() + " without a corresponding managed resource");
     }
@@ -158,8 +158,8 @@ export class HttpResourceAccessor implements ResourceAccessor {
    * @return {@link ManageableInstance} with {@link ManageableResource} and {@link ManagerResource}
    * @throws ShapeTreeException
    */
-  public createInstance(context: ShapeTreeContext, method: string, resourceUrl: URL, headers: ResourceAttributes, body: string, contentType: string): ManageableInstance /* throws ShapeTreeException */ {
-    let resource: InstanceResource = this.createResource(context, method, resourceUrl, headers, body, contentType);
+  public async createInstance(context: ShapeTreeContext, method: string, resourceUrl: URL, headers: ResourceAttributes, body: string, contentType: string): Promise<ManageableInstance> /* throws ShapeTreeException */ {
+    let resource: InstanceResource = await this.createResource(context, method, resourceUrl, headers, body, contentType);
     if (resource instanceof ManageableResource) {
       // Managed or unmanaged resource was created
       return this.createInstanceFromManageableResource(context, <ManageableResource>resource);
@@ -179,10 +179,10 @@ export class HttpResourceAccessor implements ResourceAccessor {
    * @return {@link ManageableInstance} including {@link ManagedResource}|{@link UnmanagedResource} and {@link ManagerResource}|{@link MissingManagerResource}
    * @throws ShapeTreeException
    */
-  private createInstanceFromManageableResource(context: ShapeTreeContext, manageable: ManageableResource): ManageableInstance /* throws ShapeTreeException */ {
+  private async createInstanceFromManageableResource(context: ShapeTreeContext, manageable: ManageableResource): Promise<ManageableInstance> /* throws ShapeTreeException */ {
     // Lookup the corresponding ManagerResource for the ManageableResource
     let managerResourceUrl: URL = HttpResourceAccessor.expectNotNull(manageable.getManagerResourceUrl(), () => new ShapeTreeException(500, "Cannot discover shape tree manager for " + manageable.getUrl()));
-    let manager: InstanceResource = this.getResource(context, managerResourceUrl);
+    let manager: InstanceResource = await this.getResource(context, managerResourceUrl);
     if (manager instanceof MissingManagerResource) {
       // Create and store an UnmanagedResource in instance - if the create was a resource in an unmanaged container
       let unmanaged: UnmanagedResource = new UnmanagedResource(manageable, manager.getUrl());
@@ -204,9 +204,9 @@ export class HttpResourceAccessor implements ResourceAccessor {
    * @return {@link ManageableInstance} including {@link ManagerResource} and {@link ManagedResource}
    * @throws ShapeTreeException
    */
-  private createInstanceFromManagerResource(context: ShapeTreeContext, manager: ManagerResource): ManageableInstance /* throws ShapeTreeException */ {
+  private async createInstanceFromManagerResource(context: ShapeTreeContext, manager: ManagerResource): Promise<ManageableInstance> /* throws ShapeTreeException */ {
     // Lookup the corresponding ManagedResource for the ManagerResource
-    let resource: InstanceResource = this.getResource(context, manager.getManagedResourceUrl());
+    let resource: InstanceResource = await this.getResource(context, manager.getManagedResourceUrl());
     if (resource instanceof MissingManageableResource) {
       throw new ShapeTreeException(500, "Cannot have an existing manager resource " + manager.getUrl() + " with a non-existing managed resource " + resource.getUrl());
     } else if (resource instanceof ManagerResource) {
@@ -221,18 +221,18 @@ export class HttpResourceAccessor implements ResourceAccessor {
    * Most of the work happens in {@link #generateResource(URL, DocumentResponse)}, which
    * processes the response and returns the corresponding typed resource.
    * @param context {@link ShapeTreeContext}
-   * @param url Url of the resource to get
+   * @param resourceUrl Url of the resource to get
    * @return {@link InstanceResource}
    * @throws ShapeTreeException
    */
-  public getResource(context: ShapeTreeContext, url: URL): InstanceResource /* throws ShapeTreeException */ {
-    log.debug("HttpResourceAccessor#getResource({})", url);
+  public async getResource(context: ShapeTreeContext, resourceUrl: URL): Promise<InstanceResource> /* throws ShapeTreeException */ {
+    log.debug("HttpResourceAccessor#getResource({})", resourceUrl);
     let headers: ResourceAttributes = new ResourceAttributes();
     headers.maybeSet(HttpHeaders.AUTHORIZATION, context.getAuthorizationHeaderValue());
     let fetcher: HttpClient = HttpClientFactoryManager.getFactory().get(false);
-    let req: HttpRequest = new HttpRequest("GET", url, headers, null, null);
-    let response: DocumentResponse = fetcher.fetchShapeTreeResponse(req);
-    return this.generateResource(url, response);
+    let req: HttpRequest = new HttpRequest("GET", resourceUrl, headers, null, null);
+    let response: DocumentResponse = await fetcher.fetchShapeTreeResponse(req);
+    return this.generateResource(resourceUrl, response);
   }
 
   /**
@@ -241,22 +241,22 @@ export class HttpResourceAccessor implements ResourceAccessor {
    * which processes the response and returns the corresponding typed resource.
    * @param context {@link ShapeTreeContext}
    * @param method HTTP method to use for resource creation
-   * @param url Url of the resource to create
+   * @param resourceUrl Url of the resource to create
    * @param headers HTTP headers to use for resource creation
    * @param body Body of resource to create
    * @param contentType HTTP content-type
    * @return {@link InstanceResource}
    * @throws ShapeTreeException
    */
-  public createResource(context: ShapeTreeContext, method: string, url: URL, headers: ResourceAttributes, body: string, contentType: string): InstanceResource /* throws ShapeTreeException */ {
-    log.debug("createResource via {}: URL [{}], headers [{}]", method, url, headers.toString());
+  public async createResource(context: ShapeTreeContext, method: string, resourceUrl: URL, headers: ResourceAttributes, body: string, contentType: string): Promise<InstanceResource> /* throws ShapeTreeException */ {
+    log.debug("createResource via {}: URL [{}], headers [{}]", method, resourceUrl, headers.toString());
     let fetcher: HttpClient = HttpClientFactoryManager.getFactory().get(false);
     let allHeaders: ResourceAttributes = headers.maybePlus(HttpHeaders.AUTHORIZATION, context.getAuthorizationHeaderValue());
-    let response: DocumentResponse = fetcher.fetchShapeTreeResponse(new HttpRequest(method, url, allHeaders, body, contentType));
+    let response: DocumentResponse = await fetcher.fetchShapeTreeResponse(new HttpRequest(method, resourceUrl, allHeaders, body, contentType));
     if (!response.isExists()) {
-      throw new ShapeTreeException(500, "Unable to create resource <" + url + ">");
+      throw new ShapeTreeException(500, "Unable to create resource <" + resourceUrl + ">");
     }
-    return this.generateResource(url, response);
+    return this.generateResource(resourceUrl, response);
   }
 
   /**
@@ -288,10 +288,11 @@ export class HttpResourceAccessor implements ResourceAccessor {
     const attributes: ResourceAttributes = response.getResourceAttributes() || new ResourceAttributes(); // TODO: could be null
     const resourceType: ShapeTreeResourceType = this.getResourceTypeFromHeaders(response.getResourceAttributes())!; // TODO: could be null
     const name: string = this.calculateName(url);
-    const body: string = response.getBody();
     if (response.getBody() === null) {
       log.error("Could not retrieve the body string from response for " + url);
+      throw new Error("Could not retrieve the body string from response for <" + url + ">"); // TODO: follow resolution in /home/eric/checkouts/janeirodigital/shapetrees-java/shapetrees-java-client-http/src/main/java/com/janeirodigital/shapetrees/client/http/HttpResourceAccessor.java
     }
+    const body: string = response.getBody()!;
     // Parse Link headers from response and populate ResourceAttributes
     const linkHeaders: Array<string> = attributes.allValues(HttpHeaders.LINK);
     let parsedLinkHeaders: ResourceAttributes = // !!
@@ -325,7 +326,7 @@ export class HttpResourceAccessor implements ResourceAccessor {
    */
   public async getContainedInstances(context: ShapeTreeContext, containerResourceUrl: URL): Promise<Array<ManageableInstance>> /* throws ShapeTreeException */ {
     try {
-      let resource: InstanceResource = this.getResource(context, containerResourceUrl);
+      let resource: InstanceResource = await this.getResource(context, containerResourceUrl);
       if (!(resource instanceof ManageableResource)) {
         throw new ShapeTreeException(500, "Cannot get contained resources for a manager resource <" + containerResourceUrl + ">");
       }
@@ -343,7 +344,7 @@ export class HttpResourceAccessor implements ResourceAccessor {
       }
       let containedInstances: Array<ManageableInstance> = new Array();
       for (const containerTriple of containerTriples) {
-        let containedInstance: ManageableInstance = this.getInstance(context, new URL(containerTriple.object.value)); // TODO: what if not an IRI?
+        let containedInstance: ManageableInstance = await this.getInstance(context, new URL(containerTriple.object.value)); // TODO: what if not an IRI?
         containedInstances.push(containedInstance);
       }
       return Promise.resolve(containedInstances);
@@ -357,18 +358,18 @@ export class HttpResourceAccessor implements ResourceAccessor {
    * <code>method</code>
    * @param context Shape tree context
    * @param method HTTP method to use for update
-   * @param updateResource {@link InstanceResource} to update
+   * @param updatedResource {@link InstanceResource} to update
    * @param body Body to use for update
    * @return {@link DocumentResponse} of the result
    * @throws ShapeTreeException
    */
-  public updateResource(context: ShapeTreeContext, method: string, updateResource: InstanceResource, body: string): DocumentResponse /* throws ShapeTreeException */ {
-    log.debug("updateResource: URL [{}]", updateResource.getUrl());
-    let contentType: string | null = updateResource.getAttributes().firstValue(HttpHeaders.CONTENT_TYPE);
+  public async updateResource(context: ShapeTreeContext, method: string, updatedResource: InstanceResource, body: string): Promise<DocumentResponse> /* throws ShapeTreeException */ {
+    log.debug("updateResource: URL [{}]", updatedResource.getUrl());
+    let contentType: string | null = updatedResource.getAttributes().firstValue(HttpHeaders.CONTENT_TYPE);
     // [careful] updateResource attributes may contain illegal client headers (connection, content-length, date, expect, from, host, upgrade, via, warning)
-    let allHeaders: ResourceAttributes = updateResource.getAttributes().maybePlus(HttpHeaders.AUTHORIZATION, context.getAuthorizationHeaderValue());
+    let allHeaders: ResourceAttributes = updatedResource.getAttributes().maybePlus(HttpHeaders.AUTHORIZATION, context.getAuthorizationHeaderValue());
     let fetcher: HttpClient = HttpClientFactoryManager.getFactory().get(false);
-    return fetcher.fetchShapeTreeResponse(new HttpRequest(method, updateResource.getUrl(), allHeaders, body, contentType));
+    return await fetcher.fetchShapeTreeResponse(new HttpRequest(method, updatedResource.getUrl(), allHeaders, body, contentType));
   }
 
   /**
@@ -378,11 +379,11 @@ export class HttpResourceAccessor implements ResourceAccessor {
    * @return {@link DocumentResponse} of the result
    * @throws ShapeTreeException
    */
-  public deleteResource(context: ShapeTreeContext, deleteResource: ManagerResource): DocumentResponse /* throws ShapeTreeException */ {
+  public async deleteResource(context: ShapeTreeContext, deleteResource: ManagerResource): Promise<DocumentResponse> /* throws ShapeTreeException */ {
     log.debug("deleteResource: URL [{}]", deleteResource.getUrl());
     let fetcher: HttpClient = HttpClientFactoryManager.getFactory().get(false);
     let allHeaders: ResourceAttributes = deleteResource.getAttributes().maybePlus(HttpHeaders.AUTHORIZATION, context.getAuthorizationHeaderValue());
-    let response: DocumentResponse = fetcher.fetchShapeTreeResponse(new HttpRequest("DELETE", deleteResource.getUrl(), allHeaders, null, null));
+    let response: DocumentResponse = await fetcher.fetchShapeTreeResponse(new HttpRequest("DELETE", deleteResource.getUrl(), allHeaders, null, null));
     let respCode: number = response.getStatusCode();
     if (respCode < 200 || respCode >= 400) {
       log.error("Error deleting resource {}, Status {}", deleteResource.getUrl(), respCode);

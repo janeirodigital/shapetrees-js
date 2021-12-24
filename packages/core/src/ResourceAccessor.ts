@@ -39,7 +39,7 @@ export interface ResourceAccessor {
    * @return {@link ManageableInstance} including {@link ManageableResource} and {@link ManagerResource}
    * @throws ShapeTreeException
    */
-  getInstance(context: ShapeTreeContext, resourceUrl: URL): ManageableInstance /* throws ShapeTreeException */;
+  getInstance(context: ShapeTreeContext, resourceUrl: URL): Promise<ManageableInstance> /* throws ShapeTreeException */;
 
   /**
    * Gets a {@link ManageableInstance} by first creating the resource identified by the provided
@@ -57,7 +57,7 @@ export interface ResourceAccessor {
    * @return {@link ManageableInstance} including {@link ManageableResource} and {@link ManagerResource}
    * @throws ShapeTreeException
    */
-  createInstance(context: ShapeTreeContext, method: string, resourceUrl: URL, headers: ResourceAttributes, body: string, contentType: string): ManageableInstance /* throws ShapeTreeException */;
+  createInstance(context: ShapeTreeContext, method: string, resourceUrl: URL, headers: ResourceAttributes, body: string, contentType: string): Promise<ManageableInstance> /* throws ShapeTreeException */;
 
   /**
    * Gets a list of {@link ManageableInstance}s contained in the container at the <code>containerResourceUrl</code>.
@@ -75,7 +75,7 @@ export interface ResourceAccessor {
    * @return {@link InstanceResource}
    * @throws ShapeTreeException
    */
-  getResource(context: ShapeTreeContext, resourceUrl: URL): InstanceResource /* throws ShapeTreeException */;
+  getResource(context: ShapeTreeContext, resourceUrl: URL): Promise<InstanceResource> /* throws ShapeTreeException */;
 
   /**
    * Creates a specific {@link InstanceResource} identified by the provided <code>resourceUrl</code>.
@@ -88,7 +88,7 @@ export interface ResourceAccessor {
    * @return {@link InstanceResource}
    * @throws ShapeTreeException
    */
-  createResource(context: ShapeTreeContext, method: string, resourceUrl: URL, headers: ResourceAttributes, body: string, contentType: string): InstanceResource /* throws ShapeTreeException */;
+  createResource(context: ShapeTreeContext, method: string, resourceUrl: URL, headers: ResourceAttributes, body: string, contentType: string): Promise<InstanceResource> /* throws ShapeTreeException */;
 
   /**
    * Updates a specific {@link InstanceResource} identified by the provided <code>updatedResource</code>
@@ -99,7 +99,7 @@ export interface ResourceAccessor {
    * @return Updated {@link InstanceResource}
    * @throws ShapeTreeException
    */
-  updateResource(context: ShapeTreeContext, method: string, updatedResource: InstanceResource, body: string): DocumentResponse /* throws ShapeTreeException */;
+  updateResource(context: ShapeTreeContext, method: string, updatedResource: InstanceResource, body: string): Promise<DocumentResponse> /* throws ShapeTreeException */;
 
   /**
    * Deletes a specific {@link InstanceResource} identified by the provided <code>updatedResource</code>
@@ -108,5 +108,5 @@ export interface ResourceAccessor {
    * @return Resultant {@link DocumentResponse}
    * @throws ShapeTreeException
    */
-  deleteResource(context: ShapeTreeContext, deleteResource: ManagerResource): DocumentResponse /* throws ShapeTreeException */;
+  deleteResource(context: ShapeTreeContext, deleteResource: ManagerResource): Promise<DocumentResponse> /* throws ShapeTreeException */;
 }

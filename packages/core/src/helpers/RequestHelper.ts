@@ -62,7 +62,7 @@ export class RequestHelper {
   public static determineResourceType(shapeTreeRequest: ShapeTreeRequest, existingResource: ManageableInstance): ShapeTreeResourceType /* throws ShapeTreeException */ {
     let isNonRdf: boolean;
     if (shapeTreeRequest.getMethod() !== RequestHelper.DELETE) {
-      let incomingRequestContentType: string = shapeTreeRequest.getContentType();
+      let incomingRequestContentType: string | null = shapeTreeRequest.getContentType();
       // Ensure a content-type is present
       if (incomingRequestContentType === null) {
         throw new ShapeTreeException(400, "Content-Type is required");
@@ -163,7 +163,7 @@ export class RequestHelper {
    */
   public static async getIncomingBodyGraph(shapeTreeRequest: ShapeTreeRequest, baseUrl: URL, targetResource: InstanceResource | null): Promise<Store | null> /* throws ShapeTreeException */ {
     log.debug("Reading request body into graph with baseUrl {}", baseUrl);
-    if ((shapeTreeRequest.getResourceType() === ShapeTreeResourceType.NON_RDF && shapeTreeRequest.getContentType().toLowerCase() !== "application/sparql-update") || shapeTreeRequest.getBody() === null || shapeTreeRequest.getBody().length === 0) {
+    if ((shapeTreeRequest.getResourceType() === ShapeTreeResourceType.NON_RDF && shapeTreeRequest.getContentType()!.toLowerCase() !== "application/sparql-update") || shapeTreeRequest.getBody() === null || shapeTreeRequest.getBody().length === 0) { // TODO: contentType could be null
       return null;
     }
     let targetResourceGraph: Promise<Store> | null = null;

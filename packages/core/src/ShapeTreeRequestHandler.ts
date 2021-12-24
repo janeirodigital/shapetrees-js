@@ -112,8 +112,8 @@ export class ShapeTreeRequestHandler {
     this.ensureInstanceResourceExists(containerResource.getManageableResource(), "Target container for resource creation not found");
     this.ensureRequestResourceIsContainer(containerResource.getManageableResource(), "Cannot create a shape tree instance in a non-container resource");
     // Prepare the target resource for validation and creation
-    let targetResourceUrl: URL = RequestHelper.normalizeSolidResourceUrl(containerResource.getManageableResource().getUrl(), proposedName, shapeTreeRequest.getResourceType());
-    this.ensureTargetResourceDoesNotExist(manageableInstance.getShapeTreeContext(), targetResourceUrl, "Cannot create target resource at " + targetResourceUrl + " because it already exists");
+    let targetResourceUrl: URL = RequestHelper.normalizeSolidResourceUrl(containerResource.getManageableResource().getUrl(), proposedName, shapeTreeRequest.getResourceType()!); // TODO: contentType could be null
+    await this.ensureTargetResourceDoesNotExist(manageableInstance.getShapeTreeContext(), targetResourceUrl, "Cannot create target resource at " + targetResourceUrl + " because it already exists");
     this.ensureInstanceResourceExists(containerResource.getManagerResource(), "Should not be creating a shape tree instance on an unmanaged target container");
     let containerManager: ShapeTreeManager = this.ensureShapeTreeManagerExists(
         await containerResource.getManagerResource().getManager(),
@@ -132,7 +132,7 @@ export class ShapeTreeRequestHandler {
     for (const containingAssignment of containingAssignments) {
       let containerShapeTreeUrl: URL = containingAssignment.getShapeTree();
       let containerShapeTree: ShapeTree = await ShapeTreeFactory.getShapeTree(containerShapeTreeUrl);
-      let validationResult: ValidationResult = await containerShapeTree.validateContainedResource(proposedName, shapeTreeRequest.getResourceType(), targetShapeTrees, incomingBodyGraph!, incomingFocusNodes); // TODO: could incomingBodyGraph be null here?
+      let validationResult: ValidationResult = await containerShapeTree.validateContainedResource(proposedName, shapeTreeRequest.getResourceType()!, targetShapeTrees, incomingBodyGraph!, incomingFocusNodes); // TODO: could incomingBodyGraph be null here?,  // TODO: contentType could be null
       if (!validationResult.isValid()) {
         return this.failValidation(validationResult);
       }
@@ -145,7 +145,7 @@ export class ShapeTreeRequestHandler {
       return this.failValidation(new ValidationResult(false, null, "Failed to match target focus nodes: " + unmatchedNodes));
     }
     log.debug("Creating shape tree instance at {}", targetResourceUrl);
-    let createdInstance: ManageableInstance = this.resourceAccessor.createInstance(manageableInstance.getShapeTreeContext(), shapeTreeRequest.getMethod(), targetResourceUrl, shapeTreeRequest.getHeaders(), shapeTreeRequest.getBody(), shapeTreeRequest.getContentType());
+    let createdInstance: ManageableInstance = await this.resourceAccessor.createInstance(manageableInstance.getShapeTreeContext(), shapeTreeRequest.getMethod(), targetResourceUrl, shapeTreeRequest.getHeaders(), shapeTreeRequest.getBody(), shapeTreeRequest.getContentType()!); // TODO: contentType could be null
     for (const containingAssignment of containingAssignments) {
 
       let rootShapeTreeAssignment: ShapeTreeAssignment = this.ensureAssignmentExists(
@@ -177,7 +177,7 @@ export class ShapeTreeRequestHandler {
       let shapeTree: ShapeTree = await ShapeTreeFactory.getShapeTree(assignment.getShapeTree());
       let managedResourceUrl: URL = targetResource.getManageableResource().getUrl();
       let bodyGraph: Store | null = await RequestHelper.getIncomingBodyGraph(shapeTreeRequest, managedResourceUrl, targetResource.getManageableResource()); // TODO: what if null?
-      let validationResult: ValidationResult = await shapeTree.validateResource(null, RequestHelper.getIncomingFocusNodes(shapeTreeRequest, managedResourceUrl), shapeTreeRequest.getResourceType(), bodyGraph!);
+      let validationResult: ValidationResult = await shapeTree.validateResource(null, RequestHelper.getIncomingFocusNodes(shapeTreeRequest, managedResourceUrl), shapeTreeRequest.getResourceType()!, bodyGraph!); // TODO: contentType could be null
       if (!validationResult.isValid()) {
         return this.failValidation(validationResult);
       }
@@ -299,13 +299,13 @@ export class ShapeTreeRequestHandler {
       }
     }
     shapeTreeManager.removeAssignment(assignmentToRemove);
-    this.deleteOrUpdateManagerResource(shapeTreeContext, manageableInstance.getManagerResource(), shapeTreeManager);
+    await this.deleteOrUpdateManagerResource(shapeTreeContext, manageableInstance.getManagerResource(), shapeTreeManager);
     return null;
   }
 
-  private deleteOrUpdateManagerResource(shapeTreeContext: ShapeTreeContext, managerResource: ManagerResource, shapeTreeManager: ShapeTreeManager): void /* throws ShapeTreeException */ {
+  private async deleteOrUpdateManagerResource(shapeTreeContext: ShapeTreeContext, managerResource: ManagerResource, shapeTreeManager: ShapeTreeManager): Promise<void> /* throws ShapeTreeException */ {
     if (shapeTreeManager.getAssignments().length === 0) {
-      let response: DocumentResponse = this.resourceAccessor.deleteResource(shapeTreeContext, managerResource);
+      let response: DocumentResponse = await this.resourceAccessor.deleteResource(shapeTreeContext, managerResource);
       this.ensureDeleteIsSuccessful(response);
     } else {
       // Update the existing manager resource for the managed resource
@@ -354,9 +354,9 @@ export class ShapeTreeRequestHandler {
   }
 
   // Return a root shape tree manager associated with a given shape tree assignment
-  private getRootManager(shapeTreeContext: ShapeTreeContext, assignment: ShapeTreeAssignment): Promise<ShapeTreeManager | null> /* throws ShapeTreeException */ {
+  private async getRootManager(shapeTreeContext: ShapeTreeContext, assignment: ShapeTreeAssignment): Promise<ShapeTreeManager | null> /* throws ShapeTreeException */ {
     let rootAssignmentUrl: URL = assignment.getRootAssignment();
-    let instance: ManageableInstance = this.resourceAccessor.getInstance(shapeTreeContext, rootAssignmentUrl);
+    let instance: ManageableInstance = await this.resourceAccessor.getInstance(shapeTreeContext, rootAssignmentUrl);
     return instance.getManagerResource().getManager();
   }
 
@@ -410,8 +410,8 @@ export class ShapeTreeRequestHandler {
     }
   }
 
-  private ensureTargetResourceDoesNotExist(shapeTreeContext: ShapeTreeContext, targetResourceUrl: URL, message: string): void /* throws ShapeTreeException */ {
-    let targetInstance: ManageableInstance = this.resourceAccessor.getInstance(shapeTreeContext, targetResourceUrl);
+  private async ensureTargetResourceDoesNotExist(shapeTreeContext: ShapeTreeContext, targetResourceUrl: URL, message: string): Promise<void> /* throws ShapeTreeException */ {
+    let targetInstance: ManageableInstance = await this.resourceAccessor.getInstance(shapeTreeContext, targetResourceUrl);
     if (targetInstance.wasRequestForManager() || targetInstance.getManageableResource().isExists()) {
       throw new ShapeTreeException(409, message);
     }

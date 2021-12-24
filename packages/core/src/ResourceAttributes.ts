@@ -81,7 +81,7 @@ export class ResourceAttributes {
    * @param value String value to assign to attr
    * @return original HttpClientHeaders if no change is made; otherwise a new copy.
    */
-  public maybePlus(attr: string, value: string): ResourceAttributes {
+  public maybePlus(attr: string | null, value: string | null): ResourceAttributes {
     if (attr === null || value === null) {
       return this;
     }
@@ -96,7 +96,7 @@ export class ResourceAttributes {
    * @param value String value to assign to attr
    */
   /*@SneakyThrows*/
-  public maybeSet(attr: string, value: string): void {
+  public maybeSet(attr: string | null, value: string | null): void {
     if (attr === null || value === null) {
       return;
     }
@@ -196,30 +196,4 @@ export class ResourceAttributes {
   }
 
   private static readonly LINK_HEADER_PATTERN: RegExp = new RegExp('^<(.*?)>\\s*;\\s*rel\\s*="(.*?)"\\s*');
-}
-
-// TODO: replace node-fetch.Headers with this?
-class CaseInsensitiveMap<T, U> extends Map<T, U> {
-  set(key: T, value: U): this {
-    if (typeof key === 'string') {
-      key = key.toLowerCase() as any as T;
-    }
-    return super.set(key, value);
-  }
-
-  get(key: T): U | undefined {
-    if (typeof key === 'string') {
-      key = key.toLowerCase() as any as T;
-    }
-
-    return super.get(key);
-  }
-
-  has(key: T): boolean {
-    if (typeof key === 'string') {
-      key = key.toLowerCase() as any as T;
-    }
-
-    return super.has(key);
-  }
 }

@@ -15,5 +15,5 @@ export interface HttpClient {
    * @return new DocumentResponse with response headers and contents
    * @throws ShapeTreeException
    */
-  fetchShapeTreeResponse(request: HttpRequest): DocumentResponse /* throws ShapeTreeException */;
+  fetchShapeTreeResponse(request: HttpRequest): Promise<DocumentResponse> /* throws ShapeTreeException */;
 }

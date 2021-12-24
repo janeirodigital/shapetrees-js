@@ -10,7 +10,7 @@
     "packages/core",
     "packages/client-core",
     "packages/client-http",
-    "packages/jshttp"
+    "packages/http-client-node-fetch"
   ],
   "devDependencies": {
     "@types/n3": "^1.10.4",

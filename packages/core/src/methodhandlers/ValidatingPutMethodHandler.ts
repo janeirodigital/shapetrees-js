@@ -18,7 +18,7 @@ export class ValidatingPutMethodHandler extends AbstractValidatingMethodHandler 
 
   public async validateRequest(shapeTreeRequest: ShapeTreeRequest): Promise<DocumentResponse | null> /* throws ShapeTreeException */ {
     let shapeTreeContext: ShapeTreeContext = RequestHelper.buildContextFromRequest(shapeTreeRequest);
-    let targetInstance: ManageableInstance = this.resourceAccessor.getInstance(shapeTreeContext, shapeTreeRequest.getUrl());
+    let targetInstance: ManageableInstance = await this.resourceAccessor.getInstance(shapeTreeContext, shapeTreeRequest.getUrl());
     if (targetInstance.wasRequestForManager()) {
       // Target resource is for shape tree manager, manage shape trees to plant and/or unplant
       return this.requestHandler.manageShapeTree(targetInstance, shapeTreeRequest);
@@ -33,7 +33,7 @@ export class ValidatingPutMethodHandler extends AbstractValidatingMethodHandler 
         }
       } else {
         // The target resource doesn't exist
-        let parentInstance: ManageableInstance = this.resourceAccessor.getInstance(shapeTreeContext, targetResource.getParentContainerUrl());
+        let parentInstance: ManageableInstance = await this.resourceAccessor.getInstance(shapeTreeContext, targetResource.getParentContainerUrl());
         if (parentInstance.isManaged()) {
           // If the parent container is managed by a shape tree, the resource to create must be validated
           return this.requestHandler.createShapeTreeInstance(targetInstance, parentInstance, shapeTreeRequest, targetResource.getName());

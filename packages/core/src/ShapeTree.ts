@@ -100,10 +100,10 @@ export class ShapeTree {
     } else {
       log.debug("Did not find schema in cache {} will retrieve and parse", this.shape);
       let shexShapeContents: DocumentResponse = await DocumentLoaderManager.getLoader().loadExternalDocument(this.shape);
-      if (shexShapeContents === null || shexShapeContents.getBody() === null || shexShapeContents.getBody().length === 0) {
+      if (shexShapeContents === null || shexShapeContents.getBody() === null || shexShapeContents.getBody()!.length === 0) {
         throw new ShapeTreeException(400, "Attempting to validate a ShapeTree (" + this.id + ") - Shape at (" + this.shape + ") is not found or is empty");
       }
-      let shapeBody: string = shexShapeContents.getBody();
+      let shapeBody: string = shexShapeContents.getBody()!;
       const shexCParser = ShExParser.construct(this.shape.href, {});
       try {
         schema = shexCParser.parse(shapeBody);

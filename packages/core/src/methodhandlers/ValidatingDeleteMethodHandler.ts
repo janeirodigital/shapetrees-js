@@ -17,7 +17,7 @@ export class ValidatingDeleteMethodHandler extends AbstractValidatingMethodHandl
 
   public async validateRequest(shapeTreeRequest: ShapeTreeRequest): Promise<DocumentResponse | null> /* throws ShapeTreeException */ {
     let shapeTreeContext: ShapeTreeContext = RequestHelper.buildContextFromRequest(shapeTreeRequest);
-    let targetInstance: ManageableInstance = this.resourceAccessor.getInstance(shapeTreeContext, shapeTreeRequest.getUrl());
+    let targetInstance: ManageableInstance = await this.resourceAccessor.getInstance(shapeTreeContext, shapeTreeRequest.getUrl());
     if (targetInstance.wasRequestForManager() && targetInstance.getManagerResource().isExists()) {
       // If the DELETE request is for an existing shapetree manager resource,
       // it must be evaluated to determine if unplanting is necessary

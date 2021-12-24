@@ -14,13 +14,13 @@ export interface ShapeTreeRequest {
 
   getHeaderValues(header: string): Array<string>;
 
-  getHeaderValue(header: string): string;
+  getHeaderValue(header: string): string | null;
 
   getBody(): string;
 
-  getContentType(): string;
+  getContentType(): string | null;
 
-  getResourceType(): ShapeTreeResourceType;
+  getResourceType(): ShapeTreeResourceType | null;
 
   setResourceType(resourceType: ShapeTreeResourceType): void;
 }

@@ -20,7 +20,7 @@ export class ValidatingPostMethodHandler extends AbstractValidatingMethodHandler
   public async validateRequest(shapeTreeRequest: ShapeTreeRequest): Promise<DocumentResponse | null> /* throws ShapeTreeException */ {
     let shapeTreeContext: ShapeTreeContext = RequestHelper.buildContextFromRequest(shapeTreeRequest);
     // Look up the target container for the POST. Error if it doesn't exist, or is a manager resource
-    let targetContainer: ManageableInstance = this.resourceAccessor.getInstance(shapeTreeContext, shapeTreeRequest.getUrl());
+    let targetContainer: ManageableInstance = await this.resourceAccessor.getInstance(shapeTreeContext, shapeTreeRequest.getUrl());
     // Get resource name from the slug or default to UUID
     let proposedName: string = shapeTreeRequest.getHeaders().firstValue(HttpHeaders.SLUG) || uuid();
     // If the parent container is managed by a shape tree, the proposed resource being posted must be
