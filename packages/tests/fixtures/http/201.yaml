@@ -2,3 +2,4 @@ statusCode : 201
 delay: 0
 headers:
 body: >
+  201 Created content

@@ -3,3 +3,4 @@ delay: 0
 headers:
   - 'Content-type:text/plain'
 body: >
+  404 Not expected to be found

@@ -13,8 +13,8 @@ import { ValidatingPutMethodHandler } from '@shapetrees/core/src/methodhandlers/
 import { ValidatingPatchMethodHandler } from '@shapetrees/core/src/methodhandlers/ValidatingPatchMethodHandler';
 import { ValidatingPostMethodHandler } from '@shapetrees/core/src/methodhandlers/ValidatingPostMethodHandler';
 import { HeadersMultiMap } from '@shapetrees/core/src/todo/HeadersMultiMap';
-import fetch from 'node-fetch';
-import { Headers, Request, RequestInit, Response } from 'node-fetch';
+import fetch from 'cross-fetch';
+import { Headers, Request, Response } from 'cross-fetch';
 import * as log from 'loglevel';
 import {HttpClientNodeFetch} from "./HttpClientNodeFetch";
 

@@ -14,16 +14,16 @@ export class SchemaCache {
 
    public static readonly CACHE_IS_NOT_INITIALIZED: string = "Cache is not initialized";
 
-   private static cache: Map<URL, ShexSchema> | null = null;
+   private static cache: Map<string, ShexSchema> | null = null;
 
   public static initializeCache(): void;
-  public static initializeCache(existingCache: Map<URL, ShexSchema>): void;
+  public static initializeCache(existingCache: Map<string, ShexSchema>): void;
 
-  public static initializeCache(existingCache?: Map<URL, ShexSchema>): void {
+  public static initializeCache(existingCache?: Map<string, ShexSchema>): void {
     if (existingCache instanceof Map) {
       SchemaCache.cache = existingCache;
     } else {
-      SchemaCache.cache = new Map<URL, ShexSchema>();
+      SchemaCache.cache = new Map<string, ShexSchema>();
     }
   }
 
@@ -38,7 +38,7 @@ export class SchemaCache {
     if (SchemaCache.cache === null) {
       throw new ShapeTreeException(500, SchemaCache.CACHE_IS_NOT_INITIALIZED);
     }
-    return SchemaCache.cache.has(schemaUrl);
+    return SchemaCache.cache.has(schemaUrl.href);
   }
 
   public static getSchema(schemaUrl: URL): ShexSchema /* throws ShapeTreeException */ {
@@ -46,7 +46,7 @@ export class SchemaCache {
     if (SchemaCache.cache === null) {
       throw new ShapeTreeException(500, SchemaCache.CACHE_IS_NOT_INITIALIZED);
     }
-    return SchemaCache.cache.get(schemaUrl)!;
+    return SchemaCache.cache.get(schemaUrl.href)!;
   }
 
   public static putSchema(schemaUrl: URL, schema: ShexSchema): void /* throws ShapeTreeException */ {
@@ -54,7 +54,7 @@ export class SchemaCache {
     if (SchemaCache.cache === null) {
       throw new ShapeTreeException(500, SchemaCache.CACHE_IS_NOT_INITIALIZED);
     }
-    SchemaCache.cache.set(schemaUrl, schema);
+    SchemaCache.cache.set(schemaUrl.href, schema);
   }
 
   public static clearCache(): void /* throws ShapeTreeException */ {
@@ -68,6 +68,6 @@ export class SchemaCache {
     if (SchemaCache.cache != null) {
       SchemaCache.cache.clear();
     }
-    let cache = null;
+    this.cache = null;
   }
 }

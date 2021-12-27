@@ -1,13 +1,14 @@
 // Corresponding shapetrees-java package: com.janeirodigital.shapetrees.tests.fixtures
 import { DispatcherEntry } from './DispatcherEntry';
-import {CompletedRequest} from "mockttp";
-import {CallbackResponseResult} from "mockttp/dist/rules/requests/request-handlers";
-import {Fixture} from "./Fixture";
-import * as log from 'loglevel';
+import { CompletedRequest } from "mockttp";
+import { Fixture } from "./Fixture";
 import { URL } from "url";
 import { CallbackResponseMessageResult } from "mockttp/src/rules/requests/request-handlers";
 import { Headers } from 'mockttp/src/types'
 import { HeadersMultiMap } from '@shapetrees/core/src/todo/HeadersMultiMap';
+import * as log from 'loglevel';
+import Fs from "fs";
+import Path from "path";
 
 export class RequestMatchingFixtureDispatcher {
 
@@ -22,12 +23,14 @@ export class RequestMatchingFixtureDispatcher {
   // @NotNull
   public dispatch(recordedRequest: CompletedRequest): CallbackResponseMessageResult {
     for (const entry of this.configuredFixtures) {
+      // console.log('srv -> ' + recordedRequest.method + ' ' + recordedRequest.url); // DEBUG
       if (this.matchesRequest(recordedRequest, entry)) {
-        let fixtureName: string = this.getFixtureName(entry)!; // TODO: could be null
         try {
           const serverBaseUrl = new URL(recordedRequest.url)
           const serverBase = serverBaseUrl.protocol + "://" + serverBaseUrl.hostname + ":" + serverBaseUrl.port;
-          let resp: CallbackResponseMessageResult = Fixture.parseFrom(fixtureName, serverBase).toMockResponse();
+          let fixture = entry.fixtures[entry.hit];
+          if (entry.hit < entry.fixtures.length - 1) { ++entry.hit; } // stop on last one
+          let resp: CallbackResponseMessageResult = fixture.toMockResponse();
           if (resp.statusCode === 200 && recordedRequest.method === "POST") {
             const msg: string = "Mock: response to POST " + recordedRequest + " with " + entry + " returns " + resp.statusCode;
             log.error(msg);

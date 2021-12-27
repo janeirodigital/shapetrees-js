@@ -74,7 +74,7 @@ export class GraphHelper {
         const p = new Parser({ baseIRI: baseURI.href });
         return new Promise((resolve, reject) => {
           p.parse(rawContent, (error: Error, quad: Quad, prefixes: object) => {
-            if (error) throw error;
+            if (error) reject(error);
             else if (quad) ret.addQuad(quad);
             else resolve(ret);
           });

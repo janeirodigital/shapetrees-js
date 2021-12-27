@@ -52,15 +52,6 @@ export class ShapeTreeAssignment {
      }
   }
 
-  equals(other: ShapeTreeAssignment) {
-    return this.shapeTree.href === other.shapeTree.href &&
-      this.managedResource.href === other.managedResource.href &&
-      this.rootAssignment.href === other.rootAssignment.href &&
-      this.focusNode?.href === other.focusNode?.href &&
-      this.shape?.href === other.shape?.href &&
-      this.url.href === other.url.href;
-  }
-
   public static getFromGraph(url: URL, managerGraph: Store): ShapeTreeAssignment /* throws MalformedURLException, ShapeTreeException */ {
     let shapeTree: URL | null = null;
     let managedResource: URL | null = null;
@@ -129,5 +120,25 @@ export class ShapeTreeAssignment {
 
   public getUrl(): URL {
     return this.url;
+  }
+
+  public equals(other: ShapeTreeAssignment): boolean {
+    return this.url.href === other.url.href &&
+        this.shapeTree.href === other.shapeTree.href &&
+        this.managedResource.href === other.managedResource.href &&
+        this.rootAssignment.href === other.rootAssignment.href &&
+        this.focusNode?.href === other.focusNode?.href &&
+        this.shape?.href === other.shape?.href;
+  }
+
+  public toString(): string {
+    return "ShapeTreeAssignment{" +
+        "shapeTree=" + this.shapeTree +
+        ", managedResource=" + this.managedResource +
+        ", rootAssignment=" + this.rootAssignment +
+        ", focusNode=" + this.focusNode +
+        ", shape=" + this.shape +
+        ", url=" + this.url +
+        '}';
   }
 }

@@ -16,8 +16,8 @@ export class ShapeTreeFactory {
 
    private static readonly RDFS_LABEL: string = "http://www.w3.org/2000/01/rdf-schema#label";
 
-   private static readonly localShapeTreeCache: Map<URL, ShapeTree> = new Map();
-   public static getLocalShapeTreeCache(): Map<URL, ShapeTree> { return ShapeTreeFactory.localShapeTreeCache; }
+   private static readonly localShapeTreeCache: Map<string, ShapeTree> = new Map();
+   public static getLocalShapeTreeCache(): Map<string, ShapeTree> { return ShapeTreeFactory.localShapeTreeCache; }
 
   /**
    * Looks up and parses the shape tree at <code>shapeTreeUrl</code>.
@@ -30,9 +30,9 @@ export class ShapeTreeFactory {
    */
   public static async getShapeTree(shapeTreeUrl: URL): Promise<ShapeTree> /* throws ShapeTreeException */ {
     log.debug("Parsing shape tree: <%s>", shapeTreeUrl);
-    if (ShapeTreeFactory.localShapeTreeCache.has(shapeTreeUrl)) {
+    if (ShapeTreeFactory.localShapeTreeCache.has(shapeTreeUrl.href)) {
       log.debug("[{}] previously cached -- returning", shapeTreeUrl.href);
-      return ShapeTreeFactory.localShapeTreeCache.get(shapeTreeUrl)!;
+      return ShapeTreeFactory.localShapeTreeCache.get(shapeTreeUrl.href)!;
     }
     // Load the entire shape tree resource (which may contain multiple shape trees)
     let shapeTreeResource: ShapeTreeResource = await ShapeTreeResource.getShapeTreeResource(shapeTreeUrl);
@@ -53,7 +53,7 @@ export class ShapeTreeFactory {
       throw new ShapeTreeException(400, "Only a container can be expected to have st:contains");
     }
     let shapeTree: ShapeTree = new ShapeTree(shapeTreeUrl, expectsType, label, shape, references, contains);
-    ShapeTreeFactory.localShapeTreeCache.set(shapeTreeUrl, shapeTree);
+    ShapeTreeFactory.localShapeTreeCache.set(shapeTreeUrl.href, shapeTree);
     // Recursively parse contained shape trees
     for (const containedUrl of contains) {
       ShapeTreeFactory.getShapeTree(containedUrl);

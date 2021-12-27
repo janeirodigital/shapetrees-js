@@ -18,20 +18,15 @@ const { toUrl } = DispatchEntryServer;
 import {Store} from "n3";
 import {SchemaCacheTests} from "./SchemaCacheTests";
 
-class ShapeTreeValidationTests {
+   dispatcher: RequestMatchingFixtureDispatcher = null!; // handled in beforeAll()
 
-   private static dispatcher: RequestMatchingFixtureDispatcher = null!; // handled in beforeAll()
+   httpExternalDocumentLoader: HttpExternalDocumentLoader;
 
-   private static httpExternalDocumentLoader: HttpExternalDocumentLoader;
+    httpExternalDocumentLoader = new HttpExternalDocumentLoader();
+    DocumentLoaderManager.setLoader(httpExternalDocumentLoader);
 
-  public constructor() {
-    ShapeTreeValidationTests.httpExternalDocumentLoader = new HttpExternalDocumentLoader();
-    DocumentLoaderManager.setLoader(ShapeTreeValidationTests.httpExternalDocumentLoader);
-  }
-
-  // @BeforeAll
-  static beforeAll(): void {
-    ShapeTreeValidationTests.dispatcher = new RequestMatchingFixtureDispatcher([
+beforeAll(() => {
+    dispatcher = new RequestMatchingFixtureDispatcher([
       new DispatcherEntry(["shapetrees/validation-shapetree-ttl"], "GET", "/static/shapetrees/validation/shapetree", null), 
       new DispatcherEntry(["shapetrees/containment-shapetree-ttl"], "GET", "/static/shapetrees/containment/shapetree", null), 
       new DispatcherEntry(["validation/validation-container"], "GET", "/validation/", null), 
@@ -44,164 +39,185 @@ class ShapeTreeValidationTests {
       new DispatcherEntry(["schemas/containment-shex"], "GET", "/static/shex/containment", null), 
       new DispatcherEntry(["schemas/invalid-shex"], "GET", "/static/shex/invalid", null)
     ]);
-  }
+});
 
-  // @SneakyThrows, @Test, @Label("Validate expectsType of Container")
-  async validateExpectsContainerType(): Promise<void> {
-    const server = getLocal({ debug: false });
-    server.setDispatcher(ShapeTreeValidationTests.dispatcher);
-    let result: ValidationResult;
-    let shapeTree: ShapeTree = await ShapeTreeFactory.getShapeTree(toUrl(server, "/static/shapetrees/validation/shapetree#ExpectsContainerTree"));
-    result = await shapeTree.validateResource(null, null, ShapeTreeResourceType.CONTAINER, null);
-    expect(result.isValid()).toEqual(true);
-    result = await shapeTree.validateResource(null, null, ShapeTreeResourceType.RESOURCE, null);
-    expect(result.isValid()).toEqual(false);
-    result = await shapeTree.validateResource(null, null, ShapeTreeResourceType.NON_RDF, null);
-    expect(result.isValid()).toEqual(false);
-  }
+// validateExpectsContainerType
+test("Validate expectsType of Container", async () => {
+  const server = getLocal({ debug: false });
+  server.setDispatcher(dispatcher);
+  let result: ValidationResult;
+  let shapeTree: ShapeTree = await ShapeTreeFactory.getShapeTree(toUrl(server, "/static/shapetrees/validation/shapetree#ExpectsContainerTree"));
+  result = await shapeTree.validateResource(null, null, ShapeTreeResourceType.CONTAINER, null);
+  expect(result.isValid()).toEqual(true);
+  result = await shapeTree.validateResource(null, null, ShapeTreeResourceType.RESOURCE, null);
+  expect(result.isValid()).toEqual(false);
+  result = await shapeTree.validateResource(null, null, ShapeTreeResourceType.NON_RDF, null);
+  expect(result.isValid()).toEqual(false);
+});
 
-  // @SneakyThrows, @Test, @Label("Validate expectsType of Resource")
-  async validateExpectsResourceType(): Promise<void> {
-    const server = getLocal({ debug: false });
-    server.setDispatcher(ShapeTreeValidationTests.dispatcher);
-    let result: ValidationResult;
-    let shapeTree: ShapeTree = await ShapeTreeFactory.getShapeTree(toUrl(server, "/static/shapetrees/validation/shapetree#ExpectsResourceTree"));
-    result = await shapeTree.validateResource(null, null, ShapeTreeResourceType.RESOURCE, null);
-    expect(result.isValid()).toEqual(true);
-    result = await shapeTree.validateResource(null, null, ShapeTreeResourceType.CONTAINER, null);
-    expect(result.isValid()).toEqual(false);
-    result = await shapeTree.validateResource(null, null, ShapeTreeResourceType.NON_RDF, null);
-    expect(result.isValid()).toEqual(false);
-  }
+// validateExpectsResourceType
+test("Validate expectsType of Resource", async () => {
+  const server = getLocal({ debug: false });
+  server.setDispatcher(dispatcher);
+  let result: ValidationResult;
+  let shapeTree: ShapeTree = await ShapeTreeFactory.getShapeTree(toUrl(server, "/static/shapetrees/validation/shapetree#ExpectsResourceTree"));
+  result = await shapeTree.validateResource(null, null, ShapeTreeResourceType.RESOURCE, null);
+  expect(result.isValid()).toEqual(true);
+  result = await shapeTree.validateResource(null, null, ShapeTreeResourceType.CONTAINER, null);
+  expect(result.isValid()).toEqual(false);
+  result = await shapeTree.validateResource(null, null, ShapeTreeResourceType.NON_RDF, null);
+  expect(result.isValid()).toEqual(false);
+});
 
-  // @SneakyThrows, @Test, @Label("Validate expectsType of NonRDFResource")
-  async validateExpectsNonRDFResourceType(): Promise<void> {
-    const server = getLocal({ debug: false });
-    server.setDispatcher(ShapeTreeValidationTests.dispatcher);
-    let result: ValidationResult;
-    let shapeTree: ShapeTree = await ShapeTreeFactory.getShapeTree(toUrl(server, "/static/shapetrees/validation/shapetree#ExpectsNonRDFResourceTree"));
-    result = await shapeTree.validateResource(null, null, ShapeTreeResourceType.NON_RDF, null);
-    expect(result.isValid()).toEqual(true);
-    result = await shapeTree.validateResource(null, null, ShapeTreeResourceType.RESOURCE, null);
-    expect(result.isValid()).toEqual(false);
-    result = await shapeTree.validateResource(null, null, ShapeTreeResourceType.CONTAINER, null);
-    expect(result.isValid()).toEqual(false);
-  }
+// validateExpectsNonRDFResourceType
+test("Validate expectsType of NonRDFResource", async () => {
+  const server = getLocal({ debug: false });
+  server.setDispatcher(dispatcher);
+  let result: ValidationResult;
+  let shapeTree: ShapeTree = await ShapeTreeFactory.getShapeTree(toUrl(server, "/static/shapetrees/validation/shapetree#ExpectsNonRDFResourceTree"));
+  result = await shapeTree.validateResource(null, null, ShapeTreeResourceType.NON_RDF, null);
+  expect(result.isValid()).toEqual(true);
+  result = await shapeTree.validateResource(null, null, ShapeTreeResourceType.RESOURCE, null);
+  expect(result.isValid()).toEqual(false);
+  result = await shapeTree.validateResource(null, null, ShapeTreeResourceType.CONTAINER, null);
+  expect(result.isValid()).toEqual(false);
+});
 
-  // @SneakyThrows, @Test, @Label("Validate label")
-  async validateLabel(): Promise<void> {
-    const server = getLocal({ debug: false });
-    server.setDispatcher(ShapeTreeValidationTests.dispatcher);
-    let result: ValidationResult;
-    let shapeTree: ShapeTree = await ShapeTreeFactory.getShapeTree(toUrl(server, "/static/shapetrees/validation/shapetree#LabelTree"));
-    result = await shapeTree.validateResource("resource-name", null, ShapeTreeResourceType.RESOURCE, null);
-    expect(result.isValid()).toEqual(true);
-    result = await shapeTree.validateResource("invalid-name", null, ShapeTreeResourceType.RESOURCE, null);
-    expect(result.isValid()).toEqual(false);
-  }
+// validateLabel
+test("Validate label", async () => {
+  const server = getLocal({ debug: false });
+  server.setDispatcher(dispatcher);
+  let result: ValidationResult;
+  let shapeTree: ShapeTree = await ShapeTreeFactory.getShapeTree(toUrl(server, "/static/shapetrees/validation/shapetree#LabelTree"));
+  result = await shapeTree.validateResource("resource-name", null, ShapeTreeResourceType.RESOURCE, null);
+  expect(result.isValid()).toEqual(true);
+  result = await shapeTree.validateResource("invalid-name", null, ShapeTreeResourceType.RESOURCE, null);
+  expect(result.isValid()).toEqual(false);
+});
 
-  // @SneakyThrows, @Test, @Label("Validate shape")
-  async validateShape(): Promise<void> {
-    const server = getLocal({ debug: false });
-    server.setDispatcher(ShapeTreeValidationTests.dispatcher);
-    let result: ValidationResult;
-    let shapeTree: ShapeTree = await ShapeTreeFactory.getShapeTree(toUrl(server, "/static/shapetrees/validation/shapetree#FooTree"));
-    // Validate shape with focus node
-    let focusNodeUrls: Array<URL> = [toUrl(server, "/validation/valid-resource#foo")];
-    result = await shapeTree.validateResource(null, focusNodeUrls, ShapeTreeResourceType.RESOURCE, await this.getFooBodyGraph(toUrl(server, "/validation/valid-resource")));
-    expect(result.isValid()).toEqual(true);
-    // Validate shape without focus node
-    result = await shapeTree.validateResource(null, null, ShapeTreeResourceType.RESOURCE, await this.getFooBodyGraph(toUrl(server, "/validation/valid-resource")));
-    expect(result.isValid()).toEqual(true);
-  }
+// validateShape
+test("Validate shape", async () => {
+  const server = getLocal({ debug: false });
+  server.setDispatcher(dispatcher);
+  let result: ValidationResult;
+  let shapeTree: ShapeTree = await ShapeTreeFactory.getShapeTree(toUrl(server, "/static/shapetrees/validation/shapetree#FooTree"));
+  // Validate shape with focus node
+  let focusNodeUrls: Array<URL> = [toUrl(server, "/validation/valid-resource#foo")];
+  result = await shapeTree.validateResource(null, focusNodeUrls, ShapeTreeResourceType.RESOURCE, await this.getFooBodyGraph(toUrl(server, "/validation/valid-resource")));
+  expect(result.isValid()).toEqual(true);
+  // Validate shape without focus node
+  result = await shapeTree.validateResource(null, null, ShapeTreeResourceType.RESOURCE, await this.getFooBodyGraph(toUrl(server, "/validation/valid-resource")));
+  expect(result.isValid()).toEqual(true);
+});
 
-  // @SneakyThrows, @Test, @Label("Fail to validate shape")
-  async failToValidateShape(): Promise<void> {
-    const server = getLocal({ debug: false });
-    server.setDispatcher(ShapeTreeValidationTests.dispatcher);
-    let result: ValidationResult;
-    let shapeTree: ShapeTree = await ShapeTreeFactory.getShapeTree(toUrl(server, "/static/shapetrees/validation/shapetree#FooTree"));
-    // Pass in body content that will fail validation of the shape associated with FooTree
-    let focusNodeUrls: Array<URL> = [toUrl(server, "/validation/valid-resource#foo")];
-    result = await shapeTree.validateResource(null, focusNodeUrls, ShapeTreeResourceType.RESOURCE, await this.getInvalidFooBodyGraph(toUrl(server, "/validation/valid-resource")));
-    expect(result.isValid()).toEqual(false);
-  }
+// failToValidateShape
+test("Fail to validate shape", async () => {
+  const server = getLocal({ debug: false });
+  server.setDispatcher(dispatcher);
+  let result: ValidationResult;
+  let shapeTree: ShapeTree = await ShapeTreeFactory.getShapeTree(toUrl(server, "/static/shapetrees/validation/shapetree#FooTree"));
+  // Pass in body content that will fail validation of the shape associated with FooTree
+  let focusNodeUrls: Array<URL> = [toUrl(server, "/validation/valid-resource#foo")];
+  result = await shapeTree.validateResource(null, focusNodeUrls, ShapeTreeResourceType.RESOURCE, await this.getInvalidFooBodyGraph(toUrl(server, "/validation/valid-resource")));
+  expect(result.isValid()).toEqual(false);
+});
 
-  // @SneakyThrows, @Test, @Label("Fail to validate shape when the shape resource cannot be found")
-  async failToValidateMissingShape(): Promise<void> {
-    const server = getLocal({ debug: false });
-    server.setDispatcher(ShapeTreeValidationTests.dispatcher);
-    let result: ValidationResult;
-    let shapeTree: ShapeTree = await ShapeTreeFactory.getShapeTree(toUrl(server, "/static/shapetrees/validation/shapetree#MissingShapeSchemaTree"));
-    let fooBodyGraph: Store = await this.getFooBodyGraph(toUrl(server, "/validation/valid-resource"));
-    // Catch exception thrown when a shape in a shape tree cannot be found
-    let focusNodeUrls: Array<URL> = [toUrl(server, "/validation/valid-resource#foo")];
-    expect(async () => await shapeTree.validateResource(null, focusNodeUrls, ShapeTreeResourceType.RESOURCE, fooBodyGraph)).rejects.toBeInstanceOf(ShapeTreeException);
-  }
+// failToValidateMissingShape
+test("Fail to validate shape when the shape resource cannot be found", async () => {
+  const server = getLocal({ debug: false });
+  server.setDispatcher(dispatcher);
+  let result: ValidationResult;
+  let shapeTree: ShapeTree = await ShapeTreeFactory.getShapeTree(toUrl(server, "/static/shapetrees/validation/shapetree#MissingShapeSchemaTree"));
+  let fooBodyGraph: Store = await this.getFooBodyGraph(toUrl(server, "/validation/valid-resource"));
+  // Catch exception thrown when a shape in a shape tree cannot be found
+  let focusNodeUrls: Array<URL> = [toUrl(server, "/validation/valid-resource#foo")];
+  expect(async () => await shapeTree.validateResource(null, focusNodeUrls, ShapeTreeResourceType.RESOURCE, fooBodyGraph)).rejects.toBeInstanceOf(ShapeTreeException);
+});
 
-  // @SneakyThrows, @Test, @Label("Fail to validate shape when the shape resource is malformed")
-  async failToValidateMalformedShape(): Promise<void> {
-    const server = getLocal({ debug: false });
-    server.setDispatcher(ShapeTreeValidationTests.dispatcher);
-    let result: ValidationResult;
-    let shapeTree: ShapeTree = await ShapeTreeFactory.getShapeTree(toUrl(server, "/static/shapetrees/validation/shapetree#InvalidShapeSchemaTree"));
-    let fooBodyGraph: Store = await this.getFooBodyGraph(toUrl(server, "/validation/valid-resource"));
-    // Catch exception thrown when a shape in a shape tree is invalid
-    let focusNodeUrls: Array<URL> = [toUrl(server, "/validation/valid-resource#foo")];
-    expect(async () => await shapeTree.validateResource(null, focusNodeUrls, ShapeTreeResourceType.RESOURCE, fooBodyGraph)).rejects.toBeInstanceOf(ShapeTreeException);
-  }
+// failToValidateMalformedShape
+test("Fail to validate shape when the shape resource is malformed", async () => {
+  const server = getLocal({ debug: false });
+  server.setDispatcher(dispatcher);
+  let result: ValidationResult;
+  let shapeTree: ShapeTree = await ShapeTreeFactory.getShapeTree(toUrl(server, "/static/shapetrees/validation/shapetree#InvalidShapeSchemaTree"));
+  let fooBodyGraph: Store = await this.getFooBodyGraph(toUrl(server, "/validation/valid-resource"));
+  // Catch exception thrown when a shape in a shape tree is invalid
+  let focusNodeUrls: Array<URL> = [toUrl(server, "/validation/valid-resource#foo")];
+  expect(async () => await shapeTree.validateResource(null, focusNodeUrls, ShapeTreeResourceType.RESOURCE, fooBodyGraph)).rejects.toBeInstanceOf(ShapeTreeException);
+});
 
-  // @SneakyThrows, @Test, @Label("Fail shape validation when shape tree doesn't validate a shape")
-  async failToValidateWhenNoShapeInShapeTree(): Promise<void> {
-    const server = getLocal({ debug: false });
-    server.setDispatcher(ShapeTreeValidationTests.dispatcher);
-    // Get the NoShapeValidationTree shape tree. This shape tree doesn't enforce shape validation,
-    // so it should return an error when using to validate
-    let noShapeValidationTree: ShapeTree = await ShapeTreeFactory.getShapeTree(toUrl(server, "/static/shapetrees/validation/shapetree#NoShapeValidationTree"));
-    let graphTtl: string = "<#a> <#b> <#c> .";
-    let focusNodeUrls: Array<URL> = [toUrl(server, "http://a.example/b/c.d#a")];
-    const model: Store = await GraphHelper.readStringIntoModel(new URL("http://example.com/"), graphTtl, "text/turtle");
-    expect(async () => await noShapeValidationTree.validateGraph(model, focusNodeUrls)).rejects.toBeInstanceOf(ShapeTreeException);
-  }
+// failToValidateWhenNoShapeInShapeTree
+test("Fail shape validation when shape tree doesn't validate a shape", async () => {
+  const server = getLocal({ debug: false });
+  server.setDispatcher(dispatcher);
+  // Get the NoShapeValidationTree shape tree. This shape tree doesn't enforce shape validation,
+  // so it should return an error when using to validate
+  let noShapeValidationTree: ShapeTree = await ShapeTreeFactory.getShapeTree(toUrl(server, "/static/shapetrees/validation/shapetree#NoShapeValidationTree"));
+  let graphTtl: string = "<#a> <#b> <#c> .";
+  let focusNodeUrls: Array<URL> = [toUrl(server, "http://a.example/b/c.d#a")];
+  const model: Store = await GraphHelper.readStringIntoModel(new URL("http://example.com/"), graphTtl, "text/turtle");
+  expect(async () => await noShapeValidationTree.validateGraph(model, focusNodeUrls)).rejects.toBeInstanceOf(ShapeTreeException);
+});
 
-  // @SneakyThrows, @Test, @Label("Validate shape before it is cached in schema cache")
-  async validateShapeBeforeCaching(): Promise<void> {
-    const server = getLocal({ debug: false });
-    server.setDispatcher(ShapeTreeValidationTests.dispatcher);
-    let result: ValidationResult;
-    SchemaCache.initializeCache();
-    let shapeTree: ShapeTree = await ShapeTreeFactory.getShapeTree(toUrl(server, "/static/shapetrees/validation/shapetree#FooTree"));
-    // Validate shape with focus node
-    let focusNodeUrls: Array<URL> = [toUrl(server, "/validation/valid-resource#foo")];
-    result = await shapeTree.validateResource(null, focusNodeUrls, ShapeTreeResourceType.RESOURCE, await this.getFooBodyGraph(toUrl(server, "/validation/valid-resource")));
-    expect(result.isValid()).toEqual(true);
-  }
+// validateShapeBeforeCaching
+test("Validate shape before it is cached in schema cache", async () => {
+  const server = getLocal({ debug: false });
+  server.setDispatcher(dispatcher);
+  let result: ValidationResult;
+  SchemaCache.initializeCache();
+  let shapeTree: ShapeTree = await ShapeTreeFactory.getShapeTree(toUrl(server, "/static/shapetrees/validation/shapetree#FooTree"));
+  // Validate shape with focus node
+  let focusNodeUrls: Array<URL> = [toUrl(server, "/validation/valid-resource#foo")];
+  result = await shapeTree.validateResource(null, focusNodeUrls, ShapeTreeResourceType.RESOURCE, await this.getFooBodyGraph(toUrl(server, "/validation/valid-resource")));
+  expect(result.isValid()).toEqual(true);
+});
 
-  // @SneakyThrows, @Test, @Label("Validate shape after it is cached in schema cache")
-  async validateShapeAfterCaching(): Promise<void> {
-    const server = getLocal({ debug: false });
-    server.setDispatcher(ShapeTreeValidationTests.dispatcher);
-    let result: ValidationResult;
-    let schemas: Map<URL, ShexSchema> = SchemaCacheTests.buildSchemaCache([toUrl(server, "/static/shex/validation").toString()]);
-    SchemaCache.initializeCache(schemas);
-    let shapeTree: ShapeTree = await ShapeTreeFactory.getShapeTree(toUrl(server, "/static/shapetrees/validation/shapetree#FooTree"));
-    // Validate shape with focus node
-    let focusNodeUrls: Array<URL> = [toUrl(server, "/validation/valid-resource#foo")];
-    result = await shapeTree.validateResource(null, focusNodeUrls, ShapeTreeResourceType.RESOURCE, await this.getFooBodyGraph(toUrl(server, "/validation/valid-resource")));
-    expect(result.isValid()).toEqual(true);
-  }
+// validateShapeAfterCaching
+test("Validate shape after it is cached in schema cache", async () => {
+  const server = getLocal({ debug: false });
+  server.setDispatcher(dispatcher);
+  let result: ValidationResult;
+  let schemas: Map<string, ShexSchema> = SchemaCacheTests.buildSchemaCache([toUrl(server, "/static/shex/validation").toString()]);
+  SchemaCache.initializeCache(schemas);
+  let shapeTree: ShapeTree = await ShapeTreeFactory.getShapeTree(toUrl(server, "/static/shapetrees/validation/shapetree#FooTree"));
+  // Validate shape with focus node
+  let focusNodeUrls: Array<URL> = [toUrl(server, "/validation/valid-resource#foo")];
+  result = await shapeTree.validateResource(null, focusNodeUrls, ShapeTreeResourceType.RESOURCE, await this.getFooBodyGraph(toUrl(server, "/validation/valid-resource")));
+  expect(result.isValid()).toEqual(true);
+});
 
-  private getFooBodyGraph(baseUrl: URL): Promise<Store> /* throws ShapeTreeException */ {
-    let body: string = "PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> \n" + "PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#> \n" + "PREFIX xml: <http://www.w3.org/XML/1998/namespace> \n" + "PREFIX xsd: <http://www.w3.org/2001/XMLSchema#> \n" + "PREFIX ex: <http://www.example.com/ns/ex#> \n" + "<#foo> \n" + "    ex:id 56789 ; \n" + "    ex:name \"Footastic\" ; \n" + "    ex:created_at \"2021-04-04T20:15:47.000Z\"^^xsd:dateTime . \n";
-    return GraphHelper.readStringIntoModel(baseUrl, body, "text/turtle");
-  }
+private getFooBodyGraph(baseUrl: URL): Promise<Store> /* throws ShapeTreeException */ {
+  let body: string = "PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> \n" +
+    "PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#> \n" +
+    "PREFIX xml: <http://www.w3.org/XML/1998/namespace> \n" +
+    "PREFIX xsd: <http://www.w3.org/2001/XMLSchema#> \n" +
+    "PREFIX ex: <http://www.example.com/ns/ex#> \n" +
+    "<#foo> \n" +
+    "    ex:id 56789 ; \n" +
+    "    ex:name \"Footastic\" ; \n" +
+    "    ex:created_at \"2021-04-04T20:15:47.000Z\"^^xsd:dateTime . \n";
+  return GraphHelper.readStringIntoModel(baseUrl, body, "text/turtle");
+}
 
-  private getInvalidFooBodyGraph(baseUrl: URL): Promise<Store> /* throws ShapeTreeException */ {
-    let body: string = "PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> \n" + "PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#> \n" + "PREFIX xml: <http://www.w3.org/XML/1998/namespace> \n" + "PREFIX xsd: <http://www.w3.org/2001/XMLSchema#> \n" + "PREFIX ex: <http://www.example.com/ns/ex#> \n" + "<#foo> \n" + "    ex:id 56789 ; \n" + "    ex:created_at \"2021-04-04T20:15:47.000Z\"^^xsd:dateTime . \n";
-    return GraphHelper.readStringIntoModel(baseUrl, body, "text/turtle");
-  }
+private getInvalidFooBodyGraph(baseUrl: URL): Promise<Store> /* throws ShapeTreeException */ {
+  let body: string = "PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> \n" +
+    "PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#> \n" +
+    "PREFIX xml: <http://www.w3.org/XML/1998/namespace> \n" +
+    "PREFIX xsd: <http://www.w3.org/2001/XMLSchema#> \n" +
+    "PREFIX ex: <http://www.example.com/ns/ex#> \n" +
+    "<#foo> \n" +
+    "    ex:id 56789 ; \n" +
+    "    ex:created_at \"2021-04-04T20:15:47.000Z\"^^xsd:dateTime . \n";
+  return GraphHelper.readStringIntoModel(baseUrl, body, "text/turtle");
+}
 
-  private getAttributeOneBodyGraph(): string {
-    return "PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> \n" + "PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#> \n" + "PREFIX xml: <http://www.w3.org/XML/1998/namespace> \n" + "PREFIX xsd: <http://www.w3.org/2001/XMLSchema#> \n" + "PREFIX ex: <http://www.example.com/ns/ex#> \n" + "<#resource> \n" + "    ex:name \"Attribute 1\" ; \n" + "    ex:created_at \"2021-04-04T20:15:47.000Z\"^^xsd:dateTime . \n";
-  }
+private getAttributeOneBodyGraph(): string {
+  return "PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> \n" +
+    "PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#> \n" +
+    "PREFIX xml: <http://www.w3.org/XML/1998/namespace> \n" +
+    "PREFIX xsd: <http://www.w3.org/2001/XMLSchema#> \n" +
+    "PREFIX ex: <http://www.example.com/ns/ex#> \n" +
+    "<#resource> \n" +
+    "    ex:name \"Attribute 1\" ; \n" +
+    "    ex:created_at \"2021-04-04T20:15:47.000Z\"^^xsd:dateTime . \n";
 }

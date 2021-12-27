@@ -6,8 +6,8 @@ import { ResourceAttributes } from '@shapetrees/core/src/ResourceAttributes';
 import { ShapeTreeException } from '@shapetrees/core/src/exceptions/ShapeTreeException';
 import { HttpClientNodeFetchValidatingInterceptor } from './HttpClientNodeFetchValidatingInterceptor';
 import { HeadersMultiMap } from '@shapetrees/core/src/todo/HeadersMultiMap';
-import fetch from 'node-fetch';
-import { Headers, Request, RequestInit, Response } from 'node-fetch';
+import fetch from 'cross-fetch';
+import { Headers, Request, Response } from 'cross-fetch';
 import https, {Agent} from 'https';
 import * as log from 'loglevel';
 
@@ -29,10 +29,16 @@ export class HttpClientNodeFetch implements HttpClient {
    * @throws ShapeTreeException
    */
   public async fetchShapeTreeResponse(request: HttpRequest): Promise<DocumentResponse> /* throws ShapeTreeException */ {
+    const headers = new Headers();
+    for (const [key, values] of request.headers!.toMultimap()) {
+      for (const value of values) {
+        headers.append(key, value);
+      }
+    }
     const resp = await fetch(request.resourceURL.href, {
         method: request.method,
         body: request.body,
-        headers: request.headers?.toList(), // TODO: unsure if a list is allowed
+        headers: headers, // TODO: unsure if a list is allowed
     });
     let body: string | null = null;
     try {

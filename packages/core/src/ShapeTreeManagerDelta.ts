@@ -62,7 +62,7 @@ export class ShapeTreeManagerDelta {
     for (const updatedAssignment of updatedManager.getAssignments()) {
 
       // Assignments match, and are unchanged, so continue
-      if (existingManager.getAssignmentById(updatedAssignment.getUrl())) { continue; }
+      if (existingManager.getAssignments().find((existingAssignment) => existingAssignment.equals(updatedAssignment))) { continue; }
 
       // If this was already processed and marked as updated continue
       if (delta.updatedAssignments.find(assignment => assignment.getUrl() === updatedAssignment.getUrl())) { continue; }

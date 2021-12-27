@@ -9,18 +9,21 @@ import {CallbackResponseResult} from "mockttp/dist/rules/requests/request-handle
 
 export interface ServerStartResults {
   endpoint: MockedEndpoint,
+  fixtures: any[],
 }
 
 export class DispatchEntryServer {
 
   mockServer: Mockttp = getLocal({ debug: false });
-  start(dispatcher: RequestMatchingFixtureDispatcher): Promise<ServerStartResults> {
-    return Promise.all([
-      this.mockServer.start().then(() => this.prepareServer(dispatcher.configuredFixtures)),
-      this.mockServer.forAnyRequest().thenCallback(request => this.handleRequest(request)),
-    ]).then((pz): ServerStartResults => {
-      return {endpoint: pz[1]};
-    }); // start's return is void; just return the endpoint
+  dispatcher: RequestMatchingFixtureDispatcher | null = null;
+
+  async start(dispatcher: RequestMatchingFixtureDispatcher): Promise<ServerStartResults> {
+    this.dispatcher = dispatcher;
+    await this.mockServer.start();
+    const fixtures = await this.prepareServer(dispatcher.configuredFixtures);
+    const endpoint = await this.mockServer.forAnyRequest().thenCallback(request => this.handleRequest(request));
+    const ret: ServerStartResults = {endpoint, fixtures}; // start's return is void; just return the endpoint
+    return ret;
   }
 
   async handleRequest(request: CompletedRequest): Promise<CallbackResponseResult> {
@@ -36,27 +39,34 @@ export class DispatchEntryServer {
      *   timingEvents: { startTime: 1640576995492, startTimestamp: 4478.407497, bodyReceivedTimestamp: 4480.648247 },
      *   body: { getText(): P<string|undef>, getJSON(): P<object|undef>, getDecodedBuffer(): P<Buffer|undef>, getFormData(): P<{[key: string]:string|string[]|undef;}|undef>}
      */
-    const ret = {statusCode: 200, headers: {'mock-header': 'set'}, body: request.method + ' ' + request.path};
+    if (this.dispatcher !== null) {
+      return Promise.resolve(this.dispatcher.dispatch(request));
+    }
+    const ret = {statusCode: 404, headers: {'mock-header': 'set'}, body: request.method + ' ' + request.path};
     return Promise.resolve(ret);
   }
 
-  prepareServer(dispatchers: DispatcherEntry[]): Promise<any> {
-    return Promise.all(dispatchers.map(
-      (d) => {
-        const baseUrl = this.mockServer.urlFor('/').slice(0, -1);
-        let fixtureText = Fs.readFileSync(Path.join(__dirname, '../../fixtures', d.fixtureNames[0] + '.yaml'), 'utf8');
-        fixtureText = fixtureText.replace(/\$\{SERVER_BASE\}/g, baseUrl);
-        const fixture = Fixture.parseFrom(fixtureText, "");
-        // console.log(fixture.toString());
-        // fixture.body = fixture.body.replace(/\$\{SERVER_BASE\}/g, baseUrl);
-      }
-    ))
+  async prepareServer(dispatchers: DispatcherEntry[]): Promise<any> {
+    return Promise.all(dispatchers.map((dispatcherEntry) => { // Doesn't use promise yet 'cause file access is synchronous.
+        const loaded = dispatcherEntry.fixtureNames.map((fixtureName:string ) => {
+          const baseUrl = this.mockServer.urlFor('/').slice(0, -1);
+          const fixtureFilePath = Path.join(__dirname, '../../fixtures', fixtureName + '.yaml');
+          let fixtureText = Fs.readFileSync(fixtureFilePath, 'utf8');
+          fixtureText = fixtureText.replace(/\$\{SERVER_BASE\}/g, baseUrl);
+          const fixture = Fixture.parseFrom(fixtureText, "");
+          dispatcherEntry.fixtures.push(fixture);
+          return {fixtureFilePath, fixture};
+          // fixture.body = fixture.body.replace(/\$\{SERVER_BASE\}/g, baseUrl);
+        });
+        return { dispatcherEntry, loaded };
+    }))
   }
 
   stop(): Promise<void> {
+    // console.log('srv stop ' + this.urlFor("")); // DEBUG
     return this.mockServer.stop();
   }
 
   // wrapped mockttp functions
-  urlFor(path: string): string { return this.mockServer.urlFor(path); }
+  urlFor(path: string): URL { return new URL(this.mockServer.urlFor(path)); }
 }

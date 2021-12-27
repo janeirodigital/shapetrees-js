@@ -13,7 +13,7 @@ import { LdpVocabulary } from '../vocabularies/LdpVocabulary';
 import { Store } from "n3";
 import log from 'loglevel';
 import { N3Sparql } from '../todo/n3-sparql';
-import fetch from 'node-fetch';
+import fetch from 'cross-fetch';
 import {GraphHelper} from "./GraphHelper";
 
 

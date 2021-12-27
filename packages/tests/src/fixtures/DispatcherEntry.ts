@@ -1,10 +1,14 @@
 // Corresponding shapetrees-java package: com.janeirodigital.shapetrees.tests.fixtures
+import {Fixture} from "./Fixture";
+
 export class DispatcherEntry {
 
    fixtureNames: Array<string>;
    expectedMethod: string;
    expectedPath: string;
    private expectedHeaders: Map<string, Array<string>> | null;
+   public fixtures: Fixture[] = [];
+   public hit: number = 0;
 
   public toString(): string {
     return "DispatcherEntry{" + this.fixtureNames + ":" + this.expectedMethod + '\'' + " " + this.expectedPath + '\'' + " " + this.expectedHeaders + "}";

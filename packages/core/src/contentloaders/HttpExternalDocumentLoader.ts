@@ -3,7 +3,7 @@ import { DocumentResponse } from '../DocumentResponse';
 import { ResourceAttributes } from '../ResourceAttributes';
 import { ShapeTreeException } from '../exceptions/ShapeTreeException';
 import { ExternalDocumentLoader } from './ExternalDocumentLoader';
-import fetch from 'node-fetch';
+import fetch from 'cross-fetch';
 
 /**
  * Simple HTTP implementation of ExternalDocumentLoader provided as an example
@@ -16,7 +16,9 @@ export class HttpExternalDocumentLoader implements ExternalDocumentLoader {
 
     public async loadExternalDocument(resourceUrl: URL): Promise<DocumentResponse> /* throws ShapeTreeException */ {
     try {
+        // console.log('cli -> ' + 'GET' + ' ' + resourceUrl.href); // DEBUG
         const response = await fetch(resourceUrl.href/*, this.FetchOpts*/);
+        // console.log(response.status + ' <- ' + 'GET' + ' ' + resourceUrl.href); // DEBUG
         if (!response.ok) {
             throw new Error("Failed to load contents of document: " + resourceUrl);
         }

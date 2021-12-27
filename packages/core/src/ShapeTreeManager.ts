@@ -7,6 +7,7 @@ import { ShapeTreeAssignment } from './ShapeTreeAssignment';
 import { ShapeTree } from './ShapeTree';
 import {DataFactory, NamedNode, Quad, Store} from "n3";
 import {ShapeTreeFactory} from "./ShapeTreeFactory";
+import {URL} from "url";
 
 /**
  * ShapeTreeManager
@@ -21,7 +22,7 @@ export class ShapeTreeManager {
    private readonly id: URL;
 
   // Each ShapeTreeManager has one or more ShapeTreeAssignments
-   private readonly assignments: Map<URL, ShapeTreeAssignment> = new Map();
+   private readonly assignments: Array<ShapeTreeAssignment> = [];
 
   /**
    * Constructor for a new ShapeTreeManager
@@ -29,6 +30,13 @@ export class ShapeTreeManager {
    */
   public constructor(id: URL) {
     this.id = id;
+  }
+
+  public toString():string {
+    return "ShapeTreeManager{" +
+        "id=" + this.id +
+        ", assignments=" + this.assignments +
+        '}';
   }
 
   /**
@@ -72,14 +80,15 @@ export class ShapeTreeManager {
    * @param assignment Shape tree assignment to add
    * @throws ShapeTreeException
    */
-  public addAssignment(assignment: ShapeTreeAssignment): void /* throws ShapeTreeException */ {
+  public addAssignment(assignment: ShapeTreeAssignment | null): void /* throws ShapeTreeException */ {
     if (assignment === null) {
       throw new ShapeTreeException(500, "Must provide a non-null assignment to an initialized List of assignments");
     }
     let key = assignment.getUrl();
-    if (this.assignments.has(key))
-      throw new ShapeTreeException(422, "Duplicate shape tree assignment cannot be added to Shape Tree Manager: " + this.id);
-    this.assignments.set(key, assignment);
+    if (this.assignments.find(existingAssignment => existingAssignment.equals(assignment))) {
+      throw new ShapeTreeException(422, "Identical shape tree assignment cannot be added to Shape Tree Manager: " + this.id);
+    }
+    this.assignments.push(assignment);
   }
 
   /**
@@ -105,8 +114,8 @@ export class ShapeTreeManager {
    * @return Minted URL for a new shape tree assignment
    */
   public mintAssignmentUrl(proposedAssignmentUrl: URL = this.inventAssignmentUrl()): URL {
-    while (this.assignments.has(proposedAssignmentUrl)) {
-      proposedAssignmentUrl = this.inventAssignmentUrl();
+    if (this.assignments.find(existingAssignment => existingAssignment.getUrl().href === proposedAssignmentUrl.href)) {
+      return this.mintAssignmentUrl();
     }
     return proposedAssignmentUrl;
   }
@@ -149,22 +158,26 @@ export class ShapeTreeManager {
     let assignmentNodes: Array<Quad> = managerGraph.getQuads(s, stAssignment, null, null);
     // For each st:hasAssignment node, extract a new ShapeTreeAssignment
     for (const assignmentNode of assignmentNodes) {
+      let id: URL = null!;
       try {
-        let id = new URL(assignmentNode.object.value); // TODO: what if it's not a NamedNode?
-        manager.assignments.set(id, ShapeTreeAssignment.getFromGraph(id, managerGraph));
+        if (assignmentNode.object.termType !== "NamedNode") {
+          throw new Error("I'll be caught with the invalid URLs");
+        }
+        id = new URL(assignmentNode.object.value); // TODO: what if it's not a NamedNode?
       } catch (ex) {
-         throw new ShapeTreeException(500, "Object of { " + s + " " + stAssignment + " " + assignmentNode.object + " } must be a URL.");
-       }
+        throw new ShapeTreeException(500, "Object of { " + s.value + " " + stAssignment.value + " " + assignmentNode.object.value + " } must be a URL.");
+      }
+      manager.assignments.push(ShapeTreeAssignment.getFromGraph(id, managerGraph));
     }
     return manager;
   }
 
-  public getAssignmentById(id: URL): ShapeTreeAssignment | null { // TODO: return list of assignments with same ST but different roots
-    return this.assignments.get(id) || null;
-  }
+  // public getAssignmentById(id: URL): ShapeTreeAssignment | null { // TODO: return list of assignments with same ST but different roots
+  //   return this.assignments.get(id) || null;
+  // }
 
   public getAssignmentForShapeTree(shapeTreeUrl: URL): ShapeTreeAssignment | null { // TODO: return list of assignments with same ST but different roots
-    return Array.from(this.assignments.values()).find(assignment => assignment.getShapeTree() === shapeTreeUrl) || null;
+    return Array.from(this.assignments.values()).find(assignment => assignment.getShapeTree().href === shapeTreeUrl.href) || null;
   }
 
   // Given a root assignment, lookup the corresponding assignment in a shape tree manager that has the same root assignment
@@ -184,13 +197,14 @@ export class ShapeTreeManager {
     if (assignment === null) {
       throw new Error("Cannot remove a null assignment");
     }
-    if (this.assignments.size === 0) {
+    if (this.assignments.length === 0) {
       throw new Error("Cannot remove assignments from empty set");
     }
-    if (!this.assignments.has(assignment.getUrl())) {
+    let idx = this.assignments.indexOf(assignment);
+    if (idx === -1) {
       throw new Error("Cannot remove assignment that does not exist in set");
     }
-    this.assignments.delete(assignment.getUrl());
+    this.assignments.splice(idx, 1);
   }
 
   public removeAssignmentForShapeTree(shapeTreeUrl: URL): void {
