@@ -29,7 +29,6 @@ export class ShapeTreeAssignment {
 
   // Identifies the shape to which focusNode must conform
    private readonly shape: URL | null;
-
    private readonly url: URL;
 
   public constructor(shapeTree: URL, managedResource: URL, rootAssignment: URL, focusNode: URL | null, shape: URL | null, url: URL) /* throws ShapeTreeException */ {
@@ -51,6 +50,15 @@ export class ShapeTreeAssignment {
     } catch (ex: any) {
        throw new ShapeTreeException(500, "Failed to initialize shape tree assignment: " + ex.message);
      }
+  }
+
+  equals(other: ShapeTreeAssignment) {
+    return this.shapeTree.href === other.shapeTree.href &&
+      this.managedResource.href === other.managedResource.href &&
+      this.rootAssignment.href === other.rootAssignment.href &&
+      this.focusNode?.href === other.focusNode?.href &&
+      this.shape?.href === other.shape?.href &&
+      this.url.href === other.url.href;
   }
 
   public static getFromGraph(url: URL, managerGraph: Store): ShapeTreeAssignment /* throws MalformedURLException, ShapeTreeException */ {

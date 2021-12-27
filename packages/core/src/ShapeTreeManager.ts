@@ -204,4 +204,11 @@ export class ShapeTreeManager {
   public getAssignments(): Array<ShapeTreeAssignment> {
     return Array.from(this.assignments.values());
   }
+
+  public containsAssignment(lookFor: ShapeTreeAssignment): ShapeTreeAssignment | null {
+    for (const sta of this.assignments.values()) {
+      if (sta.equals(lookFor)) return sta;
+    }
+    return null;
+  }
 }

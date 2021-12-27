@@ -17,7 +17,7 @@ export class ShapeTreeManagerDelta {
    * @param updatedManager
    * @return ShapeTreeManagerDelta
    */
-  public static evaluate(existingManager: ShapeTreeManager, updatedManager: ShapeTreeManager): ShapeTreeManagerDelta /* throws ShapeTreeException */ {
+  public static evaluate(existingManager: ShapeTreeManager | null, updatedManager: ShapeTreeManager | null): ShapeTreeManagerDelta /* throws ShapeTreeException */ {
     if (existingManager === null && updatedManager === null) {
       throw new ShapeTreeException(422, "Cannot compare two null managers");
     }
@@ -25,13 +25,13 @@ export class ShapeTreeManagerDelta {
 
     delta.existingManager = existingManager;
     delta.updatedManager = updatedManager;
-    delta.updatedAssignments = new Array();
-    delta.removedAssignments = new Array();
+    delta.updatedAssignments = [];
+    delta.removedAssignments = [];
 
     if (updatedManager === null || updatedManager.getAssignments().length === 0) {
       // All assignments have been removed in the updated manager, so any existing assignments should
       // similarly be removed. No need for further comparison.
-      delta.removedAssignments = existingManager.getAssignments();
+      delta.removedAssignments = existingManager!.getAssignments(); // known not null from checking both parms at top
       return delta;
     }
 
@@ -43,28 +43,30 @@ export class ShapeTreeManagerDelta {
     }
 
     for (const existingAssignment of existingManager.getAssignments()) {
+
       // Assignments match, and are unchanged, so continue
-      if (updatedManager.getAssignmentById(existingAssignment.getUrl())) {
-        continue;
-      }
+      if (updatedManager.containsAssignment(existingAssignment)) { continue; }
+
       // Assignments have the same URL but are different, so update
       let updatedAssignment: ShapeTreeAssignment | null = ShapeTreeManagerDelta.containsSameUrl(existingAssignment, updatedManager.getAssignments());
+
       if (updatedAssignment != null) {
         delta.updatedAssignments.push(updatedAssignment);
         continue;
       }
+
       // existing assignment isn't in the updated assignment, so remove
       delta.removedAssignments.push(existingAssignment);
     }
+
     for (const updatedAssignment of updatedManager.getAssignments()) {
+
       // Assignments match, and are unchanged, so continue
-      if (existingManager.getAssignmentById(updatedAssignment.getUrl())) {
-        continue;
-      }
+      if (existingManager.getAssignmentById(updatedAssignment.getUrl())) { continue; }
+
       // If this was already processed and marked as updated continue
-      if (delta.updatedAssignments.find(assignment => assignment.getUrl() === updatedAssignment.getUrl())) {
-        continue;
-      }
+      if (delta.updatedAssignments.find(assignment => assignment.getUrl() === updatedAssignment.getUrl())) { continue; }
+
       // updated assignment isn't in the existing assignments, so it is new, add it
       delta.updatedAssignments.push(updatedAssignment);
     }
