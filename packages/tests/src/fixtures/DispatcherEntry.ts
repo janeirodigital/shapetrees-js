@@ -1,19 +1,16 @@
 // Corresponding shapetrees-java package: com.janeirodigital.shapetrees.tests.fixtures
 export class DispatcherEntry {
 
-   private fixtureNames: Array<string>;
-
-   private expectedMethod: string;
-
-   private expectedPath: string;
-
-   private expectedHeaders: Map<string, Array<string>>;
+   fixtureNames: Array<string>;
+   expectedMethod: string;
+   expectedPath: string;
+   private expectedHeaders: Map<string, Array<string>> | null;
 
   public toString(): string {
-    return "DispatcherEntry{" + fixtureNames + ":" + expectedMethod + '\'' + " " + expectedPath + '\'' + " " + expectedHeaders + "}";
+    return "DispatcherEntry{" + this.fixtureNames + ":" + this.expectedMethod + '\'' + " " + this.expectedPath + '\'' + " " + this.expectedHeaders + "}";
   }
 
-  public constructor(fixtureNames: Array<string>, expectedMethod: string, expectedPath: string, expectedHeaders: Map<string, Array<string>>) {
+  public constructor(fixtureNames: Array<string>, expectedMethod: string, expectedPath: string, expectedHeaders: Map<string, Array<string>> | null) {
     this.fixtureNames = fixtureNames;
     this.expectedMethod = expectedMethod;
     this.expectedPath = expectedPath;
@@ -32,7 +29,7 @@ export class DispatcherEntry {
     return this.expectedPath;
   }
 
-  public getExpectedHeaders(): Map<string, Array<string>> {
+  public getExpectedHeaders(): Map<string, Array<string>> | null {
     return this.expectedHeaders;
   }
 }

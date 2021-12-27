@@ -4,7 +4,18 @@ import { ShapeTreeContext } from '@shapetrees/core/src/ShapeTreeContext';
 import { ShapeTreeManager } from '@shapetrees/core/src/ShapeTreeManager';
 import { DispatcherEntry } from './fixtures/DispatcherEntry';
 import { RequestMatchingFixtureDispatcher } from './fixtures/RequestMatchingFixtureDispatcher';
-import {ResourceAccessor} from "../../core/src/ResourceAccessor";
+import { DocumentResponse } from "../../core/src/DocumentResponse";
+import { InstanceResource } from "../../core/src/InstanceResource";
+import { ResourceAccessor } from "../../core/src/ResourceAccessor";
+import { ResourceAttributes } from "../../core/src/ResourceAttributes";
+import { ManageableInstance } from '@shapetrees/core/src/ManageableInstance'
+import { MissingManageableResource } from '@shapetrees/core/src/MissingManageableResource'
+import { MissingManagerResource } from '@shapetrees/core/src/MissingManagerResource'
+import { ManagedResource } from '@shapetrees/core/src/ManagedResource'
+import { UnmanagedResource } from '@shapetrees/core/src/UnmanagedResource'
+import { ManagerResource } from '@shapetrees/core/src/ManagerResource'
+import { ManageableResource } from '@shapetrees/core/src/ManageableResource'
+import {Mockttp, getLocal} from "mockttp";
 
 export class AbstractResourceAccessorTests {
 
@@ -12,7 +23,7 @@ export class AbstractResourceAccessorTests {
 
    protected readonly context: ShapeTreeContext;
 
-   protected static server: MockWebServer = null;
+   protected static server: Mockttp = null;
 
    protected static dispatcher: RequestMatchingFixtureDispatcher = null;
 
@@ -20,107 +31,127 @@ export class AbstractResourceAccessorTests {
     this.context = new ShapeTreeContext(null);
   }
 
-  public toUrl(server: MockWebServer, path: string): URL /* throws MalformedURLException */ {
-    // TODO: duplicates com.janeirodigital.shapetrees.tests.fixtures.MockWebServerHelper.getURL;
-    return new URL(server.url(path).toString());
+  public toUrl(server: Mockttp, path: string): URL /* throws MalformedURLException */ {
+    // TODO: duplicates com.janeirodigital.shapetrees.tests.fixtures.Mockttp.getURL;
+    return new URL(server.urlFor(path).toString());
   }
 
   // @BeforeAll
   static beforeAll(): void {
-    dispatcher = new RequestMatchingFixtureDispatcher(List.of(new DispatcherEntry(List.of("resourceAccessor/resource-no-link-headers"), "GET", "/static/resource/resource-no-link-headers", null), new DispatcherEntry(List.of("resourceAccessor/resource-empty-link-header"), "GET", "/static/resource/resource-empty-link-header", null), new DispatcherEntry(List.of("resourceAccessor/resource-container-link-header"), "GET", "/static/resource/resource-container-link-header", null), new DispatcherEntry(List.of("resourceAccessor/resource-container-link-header"), "GET", "/static/resource/resource-container-link-header/", null), new DispatcherEntry(List.of("resourceAccessor/resource-container-invalid-link-header"), "GET", "/static/resource/resource-container-invalid-link-header/", null), new DispatcherEntry(List.of("resourceAccessor/managed-container-1"), "GET", "/static/resource/managed-container-1/", null), new DispatcherEntry(List.of("resourceAccessor/managed-resource-1-create"), "PUT", "/static/resource/managed-container-1/managed-resource-1/", null), new DispatcherEntry(List.of("resourceAccessor/managed-resource-1-manager"), "GET", "/static/resource/managed-container-1/managed-resource-1/.shapetree", null), new DispatcherEntry(List.of("resourceAccessor/managed-container-1-manager"), "GET", "/static/resource/managed-container-1/.shapetree", null), new DispatcherEntry(List.of("resourceAccessor/unmanaged-container-2"), "GET", "/static/resource/unmanaged-container-2/", null), new DispatcherEntry(List.of("resourceAccessor/managed-container-2"), "GET", "/static/resource/managed-container-2/", null), new DispatcherEntry(List.of("resourceAccessor/unmanaged-resource-1-create"), "PUT", "/static/resource/unmanaged-resource-1", null), new DispatcherEntry(List.of("resourceAccessor/managed-container-2-manager-create"), "PUT", "/static/resource/managed-container-2/.shapetree", null), new DispatcherEntry(List.of("errors/404"), "GET", "/static/resource/missing-resource-1.shapetree", null), new DispatcherEntry(List.of("errors/404"), "GET", "/static/resource/missing-resource-2", null), new DispatcherEntry(List.of("resourceAccessor/missing-resource-2-manager-create"), "PUT", "/static/resource/missing-resource-2.shapetree", null), new DispatcherEntry(List.of("shapetrees/project-shapetree-ttl"), "GET", "/static/shapetrees/project/shapetree", null), new DispatcherEntry(List.of("schemas/project-shex"), "GET", "/static/shex/project/shex", null), new DispatcherEntry(List.of("errors/404"), "GET", "/static/resource/notpresent", null)));
-    server = new MockWebServer();
-    server.setDispatcher(dispatcher);
+    AbstractResourceAccessorTests.dispatcher = new RequestMatchingFixtureDispatcher([
+      new DispatcherEntry(["resourceAccessor/resource-no-link-headers"], "GET", "/static/resource/resource-no-link-headers", null), 
+      new DispatcherEntry(["resourceAccessor/resource-empty-link-header"], "GET", "/static/resource/resource-empty-link-header", null), 
+      new DispatcherEntry(["resourceAccessor/resource-container-link-header"], "GET", "/static/resource/resource-container-link-header", null), 
+      new DispatcherEntry(["resourceAccessor/resource-container-link-header"], "GET", "/static/resource/resource-container-link-header/", null), 
+      new DispatcherEntry(["resourceAccessor/resource-container-invalid-link-header"], "GET", "/static/resource/resource-container-invalid-link-header/", null), 
+      new DispatcherEntry(["resourceAccessor/managed-container-1"], "GET", "/static/resource/managed-container-1/", null), 
+      new DispatcherEntry(["resourceAccessor/managed-resource-1-create"], "PUT", "/static/resource/managed-container-1/managed-resource-1/", null), 
+      new DispatcherEntry(["resourceAccessor/managed-resource-1-manager"], "GET", "/static/resource/managed-container-1/managed-resource-1/.shapetree", null), 
+      new DispatcherEntry(["resourceAccessor/managed-container-1-manager"], "GET", "/static/resource/managed-container-1/.shapetree", null), 
+      new DispatcherEntry(["resourceAccessor/unmanaged-container-2"], "GET", "/static/resource/unmanaged-container-2/", null), 
+      new DispatcherEntry(["resourceAccessor/managed-container-2"], "GET", "/static/resource/managed-container-2/", null), 
+      new DispatcherEntry(["resourceAccessor/unmanaged-resource-1-create"], "PUT", "/static/resource/unmanaged-resource-1", null), 
+      new DispatcherEntry(["resourceAccessor/managed-container-2-manager-create"], "PUT", "/static/resource/managed-container-2/.shapetree", null), 
+      new DispatcherEntry(["errors/404"], "GET", "/static/resource/missing-resource-1.shapetree", null), 
+      new DispatcherEntry(["errors/404"], "GET", "/static/resource/missing-resource-2", null), 
+      new DispatcherEntry(["resourceAccessor/missing-resource-2-manager-create"], "PUT", "/static/resource/missing-resource-2.shapetree", null), 
+      new DispatcherEntry(["shapetrees/project-shapetree-ttl"], "GET", "/static/shapetrees/project/shapetree", null), 
+      new DispatcherEntry(["schemas/project-shex"], "GET", "/static/shex/project/shex", null), 
+      new DispatcherEntry(["errors/404"], "GET", "/static/resource/notpresent", null)
+    ]);
+    AbstractResourceAccessorTests.server = getLocal({ debug: false });
+    AbstractResourceAccessorTests.server.setDispatcher(AbstractResourceAccessorTests.dispatcher);
   }
 
   // Tests to Get ManageableInstances
   // @Test, @SneakyThrows, @DisplayName("Get instance from missing resource")
-  getInstanceFromMissingResource(): void {
-    let instance: ManageableInstance = this.resourceAccessor.getInstance(context, toUrl(server, "/static/resource/notpresent"));
-    Assertions.assertTrue(instance.getManageableResource() instanceof MissingManageableResource);
-    Assertions.assertTrue(instance.getManagerResource() instanceof MissingManagerResource);
-    Assertions.assertFalse(instance.isManaged());
-    Assertions.assertEquals(instance.getManageableResource().getUrl(), toUrl(server, "/static/resource/notpresent"));
-    Assertions.assertFalse(instance.getManageableResource().isExists());
-    Assertions.assertFalse(instance.getManagerResource().isExists());
+  async getInstanceFromMissingResource(): Promise<void> {
+    let instance: ManageableInstance = await this.resourceAccessor.getInstance(this.context, this.toUrl(AbstractResourceAccessorTests.server, "/static/resource/notpresent"));
+    expect(instance.getManageableResource() instanceof MissingManageableResource).toEqual(true);
+    expect(instance.getManagerResource() instanceof MissingManagerResource).toEqual(true);
+    expect(instance.isManaged()).toEqual(false);
+    expect(instance.getManageableResource().getUrl()).toEqual(this.toUrl(AbstractResourceAccessorTests.server, "/static/resource/notpresent"));
+    expect(instance.getManageableResource().isExists()).toEqual(false);
+    expect(instance.getManagerResource().isExists()).toEqual(false);
   }
 
   // @Test, @SneakyThrows, @DisplayName("Get instance from managed resource")
-  getInstanceFromManagedResource(): void {
+  async getInstanceFromManagedResource(): Promise<void> {
     // If the resource is Manageable - determine if it is managed by getting manager
     // Get and store a ManagedResource in instance - Manager exists - store manager in instance too
-    let instance: ManageableInstance = this.resourceAccessor.getInstance(context, toUrl(server, "/static/resource/managed-container-1/"));
-    Assertions.assertTrue(instance.getManageableResource() instanceof ManagedResource);
-    Assertions.assertNotNull(instance.getManagerResource());
-    Assertions.assertFalse(instance.getManagerResource() instanceof MissingManagerResource);
-    Assertions.assertTrue(instance.isManaged());
-    Assertions.assertFalse(instance.isUnmanaged());
+    let instance: ManageableInstance = await this.resourceAccessor.getInstance(this.context, this.toUrl(AbstractResourceAccessorTests.server, "/static/resource/managed-container-1/"));
+    expect(instance.getManageableResource() instanceof ManagedResource).toEqual(true);
+    expect(instance.getManagerResource()).not.toBeNull();
+    expect(instance.getManagerResource() instanceof MissingManagerResource).toEqual(false);
+    expect(instance.isManaged()).toEqual(true);
+    expect(instance.isUnmanaged()).toEqual(false);
     let managerResource: ManagerResource = instance.getManagerResource();
-    let manager: ShapeTreeManager = managerResource.getManager();
-    Assertions.assertEquals(1, manager.getAssignments().size());
+    let manager: ShapeTreeManager = await managerResource.getManager();
+    expect(1).toEqual(manager.getAssignments().length);
   }
 
   // @Test, @SneakyThrows, @DisplayName("Get instance for managed resource from manager request")
-  getInstanceFromManagedResourceFromManager(): void {
-    let instance: ManageableInstance = this.resourceAccessor.getInstance(context, toUrl(server, "/static/resource/managed-container-1/.shapetree"));
-    Assertions.assertNotNull(instance.getManagerResource());
-    Assertions.assertFalse(instance.getManagerResource() instanceof MissingManagerResource);
-    Assertions.assertTrue(instance.getManagerResource().isExists());
-    Assertions.assertTrue(instance.getManageableResource() instanceof ManagedResource);
-    Assertions.assertEquals(instance.getManagerResource().getManagedResourceUrl(), instance.getManageableResource().getUrl());
+  async getInstanceFromManagedResourceFromManager(): Promise<void> {
+    let instance: ManageableInstance = await this.resourceAccessor.getInstance(this.context, this.toUrl(AbstractResourceAccessorTests.server, "/static/resource/managed-container-1/.shapetree"));
+    expect(instance.getManagerResource()).not.toBeNull();
+    expect(instance.getManagerResource() instanceof MissingManagerResource).toEqual(false);
+    expect(instance.getManagerResource().isExists()).toEqual(true);
+    expect(instance.getManageableResource() instanceof ManagedResource).toEqual(true);
+    expect(instance.getManagerResource().getManagedResourceUrl()).toEqual(instance.getManageableResource().getUrl());
   }
 
   // @Test, @SneakyThrows, @DisplayName("Fail to get instance for missing resource from manager request")
   failToGetInstanceForMissingManageableResourceFromManager(): void {
     // Note that in this request, the manager is also non-existent
-    Assertions.assertThrows(ShapeTreeException.class, () -> {
-      let instance: ManageableInstance = this.resourceAccessor.getInstance(context, toUrl(server, "/static/resource/missing-resource-1.shapetree"));
-    });
+    expect(async () => {
+      let instance: ManageableInstance = await this.resourceAccessor.getInstance(this.context, this.toUrl(AbstractResourceAccessorTests.server, "/static/resource/missing-resource-1.shapetree"));
+  }).rejects.toBeInstanceOf(ShapeTreeException);
   }
 
   // @Test, @SneakyThrows, @DisplayName("Get instance from unmanaged resource")
-  getInstanceFromUnmanagedResource(): void {
+  async getInstanceFromUnmanagedResource(): Promise<void> {
     // If the resource is Manageable - determine if it is managed by getting manager
     // Get and store an UnmanagedResource in instance - No manager exists - store the location of the manager url
-    let instance: ManageableInstance = this.resourceAccessor.getInstance(context, toUrl(server, "/static/resource/unmanaged-container-2/"));
-    Assertions.assertTrue(instance.getManageableResource() instanceof UnmanagedResource);
-    Assertions.assertTrue(instance.getManagerResource() instanceof MissingManagerResource);
-    Assertions.assertTrue(instance.isUnmanaged());
-    Assertions.assertFalse(instance.isManaged());
+    let instance: ManageableInstance = await this.resourceAccessor.getInstance(this.context, this.toUrl(AbstractResourceAccessorTests.server, "/static/resource/unmanaged-container-2/"));
+    expect(instance.getManageableResource() instanceof UnmanagedResource).toEqual(true);
+    expect(instance.getManagerResource() instanceof MissingManagerResource).toEqual(true);
+    expect(instance.isUnmanaged()).toEqual(true);
+    expect(instance.isManaged()).toEqual(false);
   }
 
   // @Test, @SneakyThrows, @DisplayName("Get instance from unmanaged resource from manager request")
-  getInstanceFromUnmanagedResourceFromManager(): void {
+  async getInstanceFromUnmanagedResourceFromManager(): Promise<void> {
     // Manager resource doesn't exist. Unmanaged resource associated with it does exist
-    let instance: ManageableInstance = this.resourceAccessor.getInstance(context, toUrl(server, "/static/resource/unmanaged-container-2/.shapetree"));
-    Assertions.assertTrue(instance.getManageableResource() instanceof UnmanagedResource);
-    Assertions.assertTrue(instance.getManagerResource() instanceof MissingManagerResource);
-    Assertions.assertTrue(instance.wasRequestForManager());
-    Assertions.assertTrue(instance.isUnmanaged());
-    Assertions.assertFalse(instance.isManaged());
+    let instance: ManageableInstance = await this.resourceAccessor.getInstance(this.context, this.toUrl(AbstractResourceAccessorTests.server, "/static/resource/unmanaged-container-2/.shapetree"));
+    expect(instance.getManageableResource() instanceof UnmanagedResource).toEqual(true);
+    expect(instance.getManagerResource() instanceof MissingManagerResource).toEqual(true);
+    expect(instance.wasRequestForManager()).toEqual(true);
+    expect(instance.isUnmanaged()).toEqual(true);
+    expect(instance.isManaged()).toEqual(false);
   }
 
   // Tests to Create ManageableInstances
   // @Test, @SneakyThrows, @DisplayName("Create instance from managed resource")
-  createInstanceFromManagedResource(): void {
+  async createInstanceFromManagedResource(): Promise<void> {
     let headers: ResourceAttributes = new ResourceAttributes();
-    let instance: ManageableInstance = this.resourceAccessor.createInstance(context, "PUT", toUrl(server, "/static/resource/managed-container-1/managed-resource-1/"), headers, getMilestoneThreeBodyGraph(), "text/turtle");
-    Assertions.assertTrue(instance.isManaged());
-    Assertions.assertTrue(instance.getManageableResource() instanceof ManagedResource);
-    Assertions.assertFalse(instance.getManageableResource() instanceof MissingManageableResource);
-    Assertions.assertTrue(instance.getManagerResource().isExists());
-    Assertions.assertEquals(instance.getManagerResource().getManagedResourceUrl(), instance.getManageableResource().getUrl());
+    let instance: ManageableInstance = await this.resourceAccessor.createInstance(this.context, "PUT", this.toUrl(AbstractResourceAccessorTests.server, "/static/resource/managed-container-1/managed-resource-1/"), headers, this.getMilestoneThreeBodyGraph(), "text/turtle");
+    expect(instance.isManaged()).toEqual(true);
+    expect(instance.getManageableResource() instanceof ManagedResource).toEqual(true);
+    expect(instance.getManageableResource() instanceof MissingManageableResource).toEqual(false);
+    expect(instance.getManagerResource().isExists()).toEqual(true);
+    expect(instance.getManagerResource().getManagedResourceUrl()).toEqual(instance.getManageableResource().getUrl());
     let managerResource: ManagerResource = instance.getManagerResource();
-    let manager: ShapeTreeManager = managerResource.getManager();
-    Assertions.assertEquals(1, manager.getAssignments().size());
+    let manager: ShapeTreeManager = await managerResource.getManager();
+    expect(1).toEqual(manager.getAssignments().length);
   }
 
   // @Test, @SneakyThrows, @DisplayName("Create instance from unmanaged resource")
-  createInstanceFromUnmanagedResource(): void {
+  async createInstanceFromUnmanagedResource(): Promise<void> {
     let headers: ResourceAttributes = new ResourceAttributes();
-    let instance: ManageableInstance = this.resourceAccessor.createInstance(context, "PUT", toUrl(server, "/static/resource/unmanaged-resource-1"), headers, "<#a> <#b> <#c>", "text/turtle");
-    Assertions.assertTrue(instance.isUnmanaged());
-    Assertions.assertTrue(instance.getManageableResource() instanceof UnmanagedResource);
-    Assertions.assertTrue(instance.getManagerResource() instanceof MissingManagerResource);
+    let instance: ManageableInstance = await this.resourceAccessor.createInstance(this.context, "PUT", this.toUrl(AbstractResourceAccessorTests.server, "/static/resource/unmanaged-resource-1"), headers, "<#a> <#b> <#c>", "text/turtle");
+    expect(instance.isUnmanaged()).toEqual(true);
+    expect(instance.getManageableResource() instanceof UnmanagedResource).toEqual(true);
+    expect(instance.getManagerResource() instanceof MissingManagerResource).toEqual(true);
   }
 
   // @Test, @SneakyThrows, @DisplayName("Fail to create instance from existing manageable resource")
@@ -128,119 +159,119 @@ export class AbstractResourceAccessorTests {
     // Resource exists - ERROR - can't create a manageable resource when one already exists
     // May need to populate this
     let headers: ResourceAttributes = new ResourceAttributes();
-    Assertions.assertThrows(ShapeTreeException.class, () -> {
-      let instance: ManageableInstance = this.resourceAccessor.createInstance(context, "PUT", toUrl(server, "/static/resource/unmanaged-container-2/"), headers, "<#a> <#b> <#c>", "text/turtle");
-    });
+    expect(async () => {
+      let instance: ManageableInstance = await this.resourceAccessor.createInstance(this.context, "PUT", this.toUrl(AbstractResourceAccessorTests.server, "/static/resource/unmanaged-container-2/"), headers, "<#a> <#b> <#c>", "text/turtle");
+  }).rejects.toBeInstanceOf(ShapeTreeException);
   }
 
   // @Test, @SneakyThrows, @DisplayName("Create instance from manager resource")
-  createInstanceFromManagerResource(): void {
+  async createInstanceFromManagerResource(): Promise<void> {
     // Create a new manager and store in instance and load the managed resource and store in instance (possibly just pre-fetch metadata if lazily loading)
     let headers: ResourceAttributes = new ResourceAttributes();
-    let instance: ManageableInstance = this.resourceAccessor.createInstance(context, "PUT", toUrl(server, "/static/resource/managed-container-2/.shapetree"), headers, getProjectTwoManagerGraph(), "text/turtle");
-    Assertions.assertTrue(instance.isManaged());
-    Assertions.assertTrue(instance.getManageableResource() instanceof ManagedResource);
-    Assertions.assertFalse(instance.getManagerResource() instanceof MissingManagerResource);
+    let instance: ManageableInstance = await this.resourceAccessor.createInstance(this.context, "PUT", this.toUrl(AbstractResourceAccessorTests.server, "/static/resource/managed-container-2/.shapetree"), headers, this.getProjectTwoManagerGraph(), "text/turtle");
+    expect(instance.isManaged()).toEqual(true);
+    expect(instance.getManageableResource() instanceof ManagedResource).toEqual(true);
+    expect(instance.getManagerResource() instanceof MissingManagerResource).toEqual(false);
     // Probably need some additional tests
   }
 
   // @Test, @DisplayName("Fail to create instance from isolated manager resource")
   failToCreateInstanceFromIsolatedManagerResource(): void {
     let headers: ResourceAttributes = new ResourceAttributes();
-    Assertions.assertThrows(ShapeTreeException.class, () -> {
-      let instance: ManageableInstance = this.resourceAccessor.createInstance(context, "PUT", toUrl(server, "/static/resource/missing-resource-2.shapetree"), headers, getProjectTwoManagerGraph(), "text/turtle");
-    });
+    expect(async () => {
+      let instance: ManageableInstance = await this.resourceAccessor.createInstance(this.context, "PUT", this.toUrl(AbstractResourceAccessorTests.server, "/static/resource/missing-resource-2.shapetree"), headers, this.getProjectTwoManagerGraph(), "text/turtle");
+  }).rejects.toBeInstanceOf(ShapeTreeException);
   }
 
   // TODO - currently missing dedicated tests for create and delete. only one test for update (which is a failure test)
   // @Test, @DisplayName("Get a resource without any link headers")
-  getResourceWithNoLinkHeaders(): void /* throws MalformedURLException, ShapeTreeException */ {
-    let resource: InstanceResource = this.resourceAccessor.getResource(this.context, toUrl(server, "/static/resource/resource-no-link-headers"));
+  async getResourceWithNoLinkHeaders(): Promise<void> /* throws MalformedURLException, ShapeTreeException */ {
+    let resource: InstanceResource = await this.resourceAccessor.getResource(this.context, this.toUrl(AbstractResourceAccessorTests.server, "/static/resource/resource-no-link-headers"));
     // This is a strange way to check whether something has no link headers
-    assertTrue(resource.isExists());
-    assertTrue(((ManageableResource) resource).getManagerResourceUrl().isEmpty());
+    expect(resource.isExists()).toEqual(true);
+    expect((<ManageableResource>resource).getManagerResourceUrl() === null).toEqual(true);
   }
 
   // @Test, @DisplayName("Get a resource with an empty link header")
-  getResourceWithEmptyLinkHeader(): void /* throws MalformedURLException, ShapeTreeException */ {
+  async getResourceWithEmptyLinkHeader(): Promise<void> /* throws MalformedURLException, ShapeTreeException */ {
     // Link header is present but has nothing in it
-    let resource: InstanceResource = this.resourceAccessor.getResource(context, toUrl(server, "/static/resource/resource-empty-link-header"));
-    assertTrue(resource.isExists());
-    Assertions.assertTrue(((ManageableResource) resource).getManagerResourceUrl().isEmpty());
+    let resource: InstanceResource = await this.resourceAccessor.getResource(this.context, this.toUrl(AbstractResourceAccessorTests.server, "/static/resource/resource-empty-link-header"));
+    expect(resource.isExists()).toEqual(true);
+    expect((<ManageableResource>resource).getManagerResourceUrl() === null).toEqual(true);
   }
 
   // @Test, @DisplayName("Fail to get a resource with an invalid URL string")
   failToAccessResourceWithInvalidUrlString(): void /* throws MalformedURLException, ShapeTreeException */ {
     // TODO: Test: may as well deleted as it's only testing URL.create()
-    Assertions.assertThrows(MalformedURLException.class, () -> this.resourceAccessor.getResource(context, new URL(":invalid")));
+    expect(async () => await this.resourceAccessor.getResource(this.context, new URL(":invalid"))).rejects.toBeInstanceOf(MalformedURLException);
     // TODO - this should also test create, update, delete, getContained, (also get/create instance)
   }
 
   // @Test, @DisplayName("Get a missing resource with no slash")
-  getMissingResourceWithNoSlash(): void /* throws MalformedURLException, ShapeTreeException */ {
-    let resource: InstanceResource = this.resourceAccessor.getResource(context, toUrl(server, "/static/resource/not-existing-no-slash"));
-    assertFalse(resource.isExists());
-    assertFalse(((ManageableResource) resource).isContainer());
+  async getMissingResourceWithNoSlash(): Promise<void> /* throws MalformedURLException, ShapeTreeException */ {
+    let resource: InstanceResource = await this.resourceAccessor.getResource(this.context, this.toUrl(AbstractResourceAccessorTests.server, "/static/resource/not-existing-no-slash"));
+    expect(resource.isExists()).toEqual(false);
+    expect((<ManageableResource>resource).isContainer()).toEqual(false);
   }
 
   // @Test, @DisplayName("Get a missing container with slash")
-  getMissingContainerWithSlash(): void /* throws MalformedURLException, ShapeTreeException */ {
-    let resource: InstanceResource = this.resourceAccessor.getResource(context, toUrl(server, "/static/resource/not-existing-slash/"));
-    assertFalse(resource.isExists());
-    assertTrue(((ManageableResource) resource).isContainer());
+  async getMissingContainerWithSlash(): Promise<void> /* throws MalformedURLException, ShapeTreeException */ {
+    let resource: InstanceResource = await this.resourceAccessor.getResource(this.context, this.toUrl(AbstractResourceAccessorTests.server, "/static/resource/not-existing-slash/"));
+    expect(resource.isExists()).toEqual(false);
+    expect((<ManageableResource>resource).isContainer()).toEqual(true);
   }
 
   // @Test, @DisplayName("Get a missing container with slash and fragment")
-  getMissingContainerWithSlashAndFragment(): void /* throws MalformedURLException, ShapeTreeException */ {
-    let resource: InstanceResource = this.resourceAccessor.getResource(context, toUrl(server, "/static/resource/not-existing-slash/#withfragment"));
-    assertFalse(resource.isExists());
-    assertTrue(((ManageableResource) resource).isContainer());
+  async getMissingContainerWithSlashAndFragment(): Promise<void> /* throws MalformedURLException, ShapeTreeException */ {
+    let resource: InstanceResource = await this.resourceAccessor.getResource(this.context, this.toUrl(AbstractResourceAccessorTests.server, "/static/resource/not-existing-slash/#withfragment"));
+    expect(resource.isExists()).toEqual(false);
+    expect((<ManageableResource>resource).isContainer()).toEqual(true);
   }
 
   // @Test, @DisplayName("Get an existing container with no slash")
-  getExistingContainerNoSlash(): void /* throws MalformedURLException, ShapeTreeException */ {
+  async getExistingContainerNoSlash(): Promise<void> /* throws MalformedURLException, ShapeTreeException */ {
     // TODO - In Solid at least, the slash must be present, so I question whether setting this as a container helps or hurts
-    let resource: InstanceResource = this.resourceAccessor.getResource(context, toUrl(server, "/static/resource/resource-container-link-header"));
-    assertTrue(resource.isExists());
-    assertTrue(((ManageableResource) resource).isContainer());
+    let resource: InstanceResource = await this.resourceAccessor.getResource(this.context, this.toUrl(AbstractResourceAccessorTests.server, "/static/resource/resource-container-link-header"));
+    expect(resource.isExists()).toEqual(true);
+    expect((<ManageableResource>resource).isContainer()).toEqual(true);
   }
 
   // @Test, @DisplayName("Get an existing container")
-  getExistingContainer(): void /* throws MalformedURLException, ShapeTreeException */ {
-    let resource: InstanceResource = this.resourceAccessor.getResource(context, toUrl(server, "/static/resource/resource-container-link-header/"));
-    assertTrue(resource.isExists());
-    assertTrue(((ManageableResource) resource).isContainer());
+  async getExistingContainer(): Promise<void> /* throws MalformedURLException, ShapeTreeException */ {
+    let resource: InstanceResource = await this.resourceAccessor.getResource(this.context, this.toUrl(AbstractResourceAccessorTests.server, "/static/resource/resource-container-link-header/"));
+    expect(resource.isExists()).toEqual(true);
+    expect((<ManageableResource>resource).isContainer()).toEqual(true);
   }
 
   // @Test, @DisplayName("Fail to lookup invalid resource attributes")
-  failToLookupInvalidAttributes(): void /* throws MalformedURLException, ShapeTreeException */ {
-    let resource: InstanceResource = this.resourceAccessor.getResource(context, toUrl(server, "/static/resource/resource-container-link-header"));
-    assertTrue(resource.isExists());
-    Assertions.assertNull(resource.getAttributes().firstValue("invalid").orElse(null));
+  async failToLookupInvalidAttributes(): Promise<void> /* throws MalformedURLException, ShapeTreeException */ {
+    let resource: InstanceResource = await this.resourceAccessor.getResource(this.context, this.toUrl(AbstractResourceAccessorTests.server, "/static/resource/resource-container-link-header"));
+    expect(resource.isExists()).toEqual(true);
+    expect(resource.getAttributes().firstValue("invalid")).toBeNull();
   }
 
   // @Test, @DisplayName("Get a missing resource")
-  getMissingResource(): void /* throws MalformedURLException, ShapeTreeException */ {
-    let resource: InstanceResource = this.resourceAccessor.getResource(context, toUrl(server, "/static/resource/notpresent"));
-    Assertions.assertEquals("", resource.getBody());
+  async getMissingResource(): Promise<void> /* throws MalformedURLException, ShapeTreeException */ {
+    let resource: InstanceResource = await this.resourceAccessor.getResource(this.context, this.toUrl(AbstractResourceAccessorTests.server, "/static/resource/notpresent"));
+    expect("").toEqual(resource.getBody());
     // TODO - what other tests and assertions should be included here? isExists()?
   }
 
   // @Test, @DisplayName("Get a container with an invalid link type header")
-  getContainerWithInvalidLinkTypeHeader(): void /* throws MalformedURLException, ShapeTreeException */ {
+  async getContainerWithInvalidLinkTypeHeader(): Promise<void> /* throws MalformedURLException, ShapeTreeException */ {
     // TODO - at the moment we process this happily. Aside from not marking it as a container, should there be a more severe handling?
-    let resource: InstanceResource = this.resourceAccessor.getResource(context, toUrl(server, "/static/resource/resource-container-invalid-link-header/"));
-    assertTrue(resource.isExists());
-    assertFalse(((ManageableResource) resource).isContainer());
+    let resource: InstanceResource = await this.resourceAccessor.getResource(this.context, this.toUrl(AbstractResourceAccessorTests.server, "/static/resource/resource-container-invalid-link-header/"));
+    expect(resource.isExists()).toEqual(true);
+    expect((<ManageableResource>resource).isContainer()).toEqual(false);
   }
 
   // @Test, @DisplayName("Fail to update resource")
-  failToUpdateResource(): void /* throws MalformedURLException, ShapeTreeException */ {
+  async failToUpdateResource(): Promise<void> /* throws MalformedURLException, ShapeTreeException */ {
     // Succeed in getting a resource
-    let resource: InstanceResource = this.resourceAccessor.getResource(context, toUrl(server, "/static/resource/resource-container-link-header/"));
+    let resource: InstanceResource = await this.resourceAccessor.getResource(this.context, this.toUrl(AbstractResourceAccessorTests.server, "/static/resource/resource-container-link-header/"));
     // Fail to update it
-    let response: DocumentResponse = this.resourceAccessor.updateResource(context, "PUT", resource, "BODY");
-    assertFalse(response.isExists());
+    let response: DocumentResponse = await this.resourceAccessor.updateResource(this.context, "PUT", resource, "BODY");
+    expect(response.isExists()).toEqual(false);
   }
 
   private getMilestoneThreeBodyGraph(): string {

@@ -6,16 +6,10 @@ import { HttpExternalDocumentLoader } from '@shapetrees/core/src/contentloaders/
 import { ShapeTreeException } from '@shapetrees/core/src/exceptions/ShapeTreeException';
 import { DispatcherEntry } from './fixtures/DispatcherEntry';
 import { RequestMatchingFixtureDispatcher } from './fixtures/RequestMatchingFixtureDispatcher';
-import * as GlobalFactory from 'fr/inria/lille/shexjava';
-import * as ShexSchema from 'fr/inria/lille/shexjava/schema';
-import * as ShExCParser from 'fr/inria/lille/shexjava/schema/parsing';
-import * as MockWebServer from 'okhttp3/mockwebserver';
-import * as MalformedURLException from 'java/net';
+import {Mockttp, getLocal} from 'mockttp';
 import { toUrl } from './fixtures/MockWebServerHelper/toUrl';
-import * as assertFalse from 'org/junit/jupiter/api/Assertions';
-import * as assertTrue from 'org/junit/jupiter/api/Assertions';
 
-@TestMethodOrder(MethodOrderer.OrderAnnotation.class)
+// @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 export class SchemaCacheTests {
 
    private static dispatcher: RequestMatchingFixtureDispatcher = null;
@@ -29,69 +23,71 @@ export class SchemaCacheTests {
 
   // @BeforeAll
   static beforeAll(): void /* throws ShapeTreeException */ {
-    dispatcher = new RequestMatchingFixtureDispatcher(List.of(new DispatcherEntry(List.of("schemas/project-shex"), "GET", "/static/shex/project", null)));
+    dispatcher = new RequestMatchingFixtureDispatcher([
+      new DispatcherEntry(["schemas/project-shex"], "GET", "/static/shex/project", null)
+    ]);
     SchemaCache.unInitializeCache();
   }
 
   // @Test, @Order(1)
   testFailToOperateOnUninitializedCache(): void /* throws MalformedURLException, ShapeTreeException */ {
-    assertFalse(SchemaCache.isInitialized());
+    expect(SchemaCache.isInitialized()).toEqual(false);
     // containsSchema
-    let containsException: Throwable = Assertions.assertThrows(ShapeTreeException.class, () -> SchemaCache.containsSchema(new URL("http://schema.example")));
-    Assertions.assertEquals(SchemaCache.CACHE_IS_NOT_INITIALIZED, containsException.getMessage());
+    let containsException: Throwable = expect(async () => await SchemaCache.containsSchema(new URL("http://schema.example"))).rejects.toBeInstanceOf(ShapeTreeException);
+    expect(SchemaCache.CACHE_IS_NOT_INITIALIZED).toEqual(containsException.getMessage());
     // getSchema
-    let getException: Throwable = Assertions.assertThrows(ShapeTreeException.class, () -> SchemaCache.getSchema(new URL("http://schema.example")));
-    Assertions.assertEquals(SchemaCache.CACHE_IS_NOT_INITIALIZED, getException.getMessage());
+    let getException: Throwable = expect(async () => await SchemaCache.getSchema(new URL("http://schema.example"))).rejects.toBeInstanceOf(ShapeTreeException);
+    expect(SchemaCache.CACHE_IS_NOT_INITIALIZED).toEqual(getException.getMessage());
     // putSchema
-    let putException: Throwable = Assertions.assertThrows(ShapeTreeException.class, () -> SchemaCache.putSchema(new URL("http://schema.example"), null));
-    Assertions.assertEquals(SchemaCache.CACHE_IS_NOT_INITIALIZED, putException.getMessage());
+    let putException: Throwable = expect(async () => await SchemaCache.putSchema(new URL("http://schema.example"), null)).rejects.toBeInstanceOf(ShapeTreeException);
+    expect(SchemaCache.CACHE_IS_NOT_INITIALIZED).toEqual(putException.getMessage());
     // clearSchema
-    let clearException: Throwable = Assertions.assertThrows(ShapeTreeException.class, () -> SchemaCache.clearCache());
-    Assertions.assertEquals(SchemaCache.CACHE_IS_NOT_INITIALIZED, clearException.getMessage());
+    let clearException: Throwable = expect(async () => await SchemaCache.clearCache()).rejects.toBeInstanceOf(ShapeTreeException);
+    expect(SchemaCache.CACHE_IS_NOT_INITIALIZED).toEqual(clearException.getMessage());
   }
 
   // @Test, @Order(2)
   testInitializeCache(): void /* throws MalformedURLException, ShapeTreeException */ {
     SchemaCache.initializeCache();
-    assertTrue(SchemaCache.isInitialized());
-    assertFalse(SchemaCache.containsSchema(new URL("http://schema.example")));
+    expect(SchemaCache.isInitialized()).toEqual(true);
+    expect(SchemaCache.containsSchema(new URL("http://schema.example"))).toEqual(false);
   }
 
   // @Test, @Order(3)
   testPreloadCache(): void /* throws MalformedURLException, ShapeTreeException */ {
-    let server: MockWebServer = new MockWebServer();
+    const mockServer = getLocal({ debug: false });
     server.setDispatcher(dispatcher);
-    let schemas: Map<URL, ShexSchema> = buildSchemaCache(List.of(toUrl(server, "/static/shex/project").toString()));
+    let schemas: Map<URL, ShexSchema> = buildSchemaCache([toUrl(server, "/static/shex/project").toString()]);
     SchemaCache.initializeCache(schemas);
-    assertTrue(SchemaCache.containsSchema(toUrl(server, "/static/shex/project")));
+    expect(SchemaCache.containsSchema(toUrl(server, "/static/shex/project"))).toEqual(true);
   }
 
   // @Test, @Order(4)
   testClearPutGet(): void /* throws MalformedURLException, ShapeTreeException */ {
-    let server: MockWebServer = new MockWebServer();
+    const mockServer = getLocal({ debug: false });
     server.setDispatcher(dispatcher);
     SchemaCache.clearCache();
-    Assertions.assertNull(SchemaCache.getSchema(toUrl(server, "/static/shex/project")));
-    let schemas: Map<URL, ShexSchema> = buildSchemaCache(List.of(toUrl(server, "/static/shex/project").toString()));
+    expect(SchemaCache.getSchema(toUrl(server, "/static/shex/project"))).toBeNull();
+    let schemas: Map<URL, ShexSchema> = buildSchemaCache([toUrl(server, "/static/shex/project").toString()]);
     let firstEntry: Map.Entry<URL, ShexSchema> = schemas.entrySet().stream().findFirst().orElse(null);
     if (firstEntry === null)
       return;
     SchemaCache.putSchema(firstEntry.getKey(), firstEntry.getValue());
-    Assertions.assertNotNull(SchemaCache.getSchema(toUrl(server, "/static/shex/project")));
+    expect(SchemaCache.getSchema(toUrl(server, "/static/shex/project"))).not.toBeNull();
   }
 
   // @Test, @Order(5)
   testNullOnCacheContains(): void /* throws MalformedURLException, ShapeTreeException */ {
-    let server: MockWebServer = new MockWebServer();
+    const mockServer = getLocal({ debug: false });
     server.setDispatcher(dispatcher);
     SchemaCache.clearCache();
-    Assertions.assertNull(SchemaCache.getSchema(toUrl(server, "/static/shex/project")));
-    let schemas: Map<URL, ShexSchema> = buildSchemaCache(List.of(toUrl(server, "/static/shex/project").toString()));
+    expect(SchemaCache.getSchema(toUrl(server, "/static/shex/project"))).toBeNull();
+    let schemas: Map<URL, ShexSchema> = buildSchemaCache([toUrl(server, "/static/shex/project").toString()]);
     let firstEntry: Map.Entry<URL, ShexSchema> = schemas.entrySet().stream().findFirst().orElse(null);
     if (firstEntry === null)
       return;
     SchemaCache.putSchema(firstEntry.getKey(), firstEntry.getValue());
-    Assertions.assertNotNull(SchemaCache.getSchema(toUrl(server, "/static/shex/project")));
+    expect(SchemaCache.getSchema(toUrl(server, "/static/shex/project"))).not.toBeNull();
   }
 
   public static buildSchemaCache(schemasToCache: Array<string>): Map<URL, ShexSchema> /* throws MalformedURLException, ShapeTreeException */ {

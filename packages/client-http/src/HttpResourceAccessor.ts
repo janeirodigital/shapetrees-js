@@ -541,7 +541,7 @@ export class HttpResourceAccessor implements ResourceAccessor {
     return url.search != null && !!url.search.match(".*ext\\=shapetree$");
   }
 
-  public static expectNotNull<T> (expected: T | null, makeError: () => Error): T | never {
+  public static expectNotNull<T> (expected: T | null, makeError: () => ShapeTreeException): T | never {
     if (expected === null)
         throw makeError();
     return expected;

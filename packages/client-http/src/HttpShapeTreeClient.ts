@@ -104,7 +104,7 @@ export class HttpShapeTreeClient implements ShapeTreeClient {
     let manager: ShapeTreeManager;
     let managerResourceUrl: URL = instance.getManagerResource().getUrl();
     if (instance.isManaged()) {
-      manager = HttpResourceAccessor.expectNotNull(await instance.getManagerResource().getManager(), () => new Error("Expected a manager at <" + managerResourceUrl + ">."));
+      manager = HttpResourceAccessor.expectNotNull(await instance.getManagerResource().getManager(), () => new ShapeTreeException(500, "Expected a manager at <" + managerResourceUrl + ">."));
     } else {
       manager = new ShapeTreeManager(managerResourceUrl);
     }
@@ -128,7 +128,7 @@ export class HttpShapeTreeClient implements ShapeTreeClient {
     return fetcher.fetchShapeTreeResponse(new HttpRequest("PUT", managerResourceUrl, headers, asText!, "text/turtle"));
   }
 
-  public postManagedInstance(context: ShapeTreeContext, parentContainer: URL, focusNodes: Array<URL>, targetShapeTrees: Array<URL>, bodyString: string, contentType: string, proposedName: string, isContainer: boolean): Promise<DocumentResponse> /* throws ShapeTreeException */ {
+  public postManagedInstance(context: ShapeTreeContext, parentContainer: URL, focusNodes: Array<URL> | null, bodyString: string, contentType: string, targetShapeTrees: Array<URL> | null, proposedName: string | null, isContainer: boolean): Promise<DocumentResponse> /* throws ShapeTreeException */ {
     if (context === null || parentContainer === null) {
       throw new ShapeTreeException(500, "Must provide a valid context and parent container to post shape tree instance");
     }

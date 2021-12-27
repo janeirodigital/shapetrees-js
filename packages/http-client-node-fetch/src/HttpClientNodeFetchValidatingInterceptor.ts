@@ -12,6 +12,7 @@ import { ValidatingDeleteMethodHandler } from '@shapetrees/core/src/methodhandle
 import { ValidatingPutMethodHandler } from '@shapetrees/core/src/methodhandlers/ValidatingPutMethodHandler';
 import { ValidatingPatchMethodHandler } from '@shapetrees/core/src/methodhandlers/ValidatingPatchMethodHandler';
 import { ValidatingPostMethodHandler } from '@shapetrees/core/src/methodhandlers/ValidatingPostMethodHandler';
+import { HeadersMultiMap } from '@shapetrees/core/src/todo/HeadersMultiMap';
 import fetch from 'node-fetch';
 import { Headers, Request, RequestInit, Response } from 'node-fetch';
 import * as log from 'loglevel';
@@ -108,20 +109,15 @@ export class HttpClientNodeFetchValidatingInterceptor {
      private readonly contentType: string;
 
      private readonly headers: ResourceAttributes;
-      static CommaSeparatedHeaders = ['link'];
 
     public constructor(request: Request, body: string, contentType: string) {
       this.request = request;
       this.body = body;
       this.contentType = contentType;
       this.resourceType = null;
-      const tm = new CaseInsensitiveMap<string, Array<string>>();
+      const tm = new HeadersMultiMap();
       this.request.headers.forEach((value, key) => {
-          if (JsHttpShapeTreeRequest.CommaSeparatedHeaders.indexOf(key) !== -1) {
-              tm.set(key, value.split(/,/));
-          } else {
-              tm.set(key, [value]);
-          }
+          tm.replace(key, value);
       });
       this.headers = new ResourceAttributes(tm);
     }
@@ -170,80 +166,3 @@ export class HttpClientNodeFetchValidatingInterceptor {
       return this.body;
     }
   }
-/*
-  private class MyHttpResponse implements java.net.http.HttpResponse {
-
-     private statusCode: number;
-
-     private request: java.net.http.HttpRequest;
-
-     private headers: java.net.http.HttpHeaders;
-
-     private body: string;
-
-    override public statusCode(): number {
-      return this.statusCode;
-    }
-
-    override public request(): java.net.http.HttpRequest {
-      return this.request;
-    }
-
-    override public previousResponse(): HttpResponse<string> | null {
-      return Optional.empty();
-    }
-
-    override public headers(): java.net.http.HttpHeaders {
-      return this.headers;
-    }
-
-    override public body(): string {
-      return this.body;
-    }
-
-    override public sslSession(): SSLSession | null {
-      return Optional.empty();
-    }
-
-    override public uri(): URI {
-      return null;
-    }
-
-    override public version(): java.net.http.HttpClient.Version {
-      return null;
-    }
-
-    public constructor(statusCode: number, request: java.net.http.HttpRequest, headers: java.net.http.HttpHeaders, body: string) {
-      this.statusCode = statusCode;
-      this.request = request;
-      this.headers = headers;
-      this.body = body;
-    }
-  }
- */
-
-// TODO: replace node-fetch.Headers with this?
-class CaseInsensitiveMap<T, U> extends Map<T, U> {
-    set(key: T, value: U): this {
-        if (typeof key === 'string') {
-            key = key.toLowerCase() as any as T;
-        }
-        return super.set(key, value);
-    }
-
-    get(key: T): U | undefined {
-        if (typeof key === 'string') {
-            key = key.toLowerCase() as any as T;
-        }
-
-        return super.get(key);
-    }
-
-    has(key: T): boolean {
-        if (typeof key === 'string') {
-            key = key.toLowerCase() as any as T;
-        }
-
-        return super.has(key);
-    }
-}

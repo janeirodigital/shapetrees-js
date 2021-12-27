@@ -7,6 +7,7 @@ import { DocumentResponse } from './DocumentResponse';
 import {Store} from "n3";
 import {URL} from "url";
 import * as log from 'loglevel';
+import {ShapeTree} from "./ShapeTree";
 
 /**
  * Represents a resource that contains one or more shape tree definitions. Provides
@@ -24,6 +25,7 @@ export class ShapeTreeResource {
 
   // @Getter
    private static readonly localResourceCache: Map<URL, ShapeTreeResource> = new Map();
+  public static getLocalResourceCache(): Map<URL, ShapeTreeResource> { return ShapeTreeResource.localResourceCache; }
 
   /**
    * Looks up and caches the shape tree resource at <code>resourceUrl</code>. Will used cached

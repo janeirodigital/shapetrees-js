@@ -1,11 +1,10 @@
 // Corresponding shapetrees-java package: com.janeirodigital.shapetrees.core.exceptions
-export class ShapeTreeException extends Error {
+export class ShapeTreeException /* extends Error */ { // TODO: make STE extend Error once https://github.com/facebook/jest/issues/11693#issuecomment-1001043495 is resolved
 
-   private readonly statusCode: number;
-
-  public constructor(statusCode: number, message: string) {
-    super(message);
-    this.statusCode = statusCode;
+  public constructor(
+      private statusCode: number,
+      public message: string) {
+    /* super(message) */;
   }
 
   public getStatusCode(): number {

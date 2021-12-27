@@ -7,11 +7,10 @@ import { ShapeTreeException } from '@shapetrees/core/src/exceptions/ShapeTreeExc
 import { GraphHelper } from '@shapetrees/core/src/helpers/GraphHelper';
 import { DispatcherEntry } from './fixtures/DispatcherEntry';
 import { RequestMatchingFixtureDispatcher } from './fixtures/RequestMatchingFixtureDispatcher';
-import * as MockWebServer from 'okhttp3/mockwebserver';
-import * as Graph from 'org/apache/jena/graph';
-import * as MalformedURLException from 'java/net';
-import * as URI from 'java/net';
-import { toUrl } from './fixtures/MockWebServerHelper/toUrl';
+import {Mockttp, getLocal} from 'mockttp';
+import { DispatchEntryServer } from './fixtures/DispatchEntryServer';
+import {Store} from "n3";
+const { toUrl } = DispatchEntryServer;
 
 class ShapeTreeManagerTests {
 
@@ -19,178 +18,185 @@ class ShapeTreeManagerTests {
 
    private static manager: ShapeTreeManager;
 
-   private static server: MockWebServer;
+   private static server: Mockttp;
 
-   private static assignment1: ShapeTreeAssignmentprivate static assignment2: ShapeTreeAssignmentprivate static assignment3: ShapeTreeAssignmentprivate static nonContainingAssignment1: ShapeTreeAssignmentprivate static nonContainingAssignment2: ShapeTreeAssignmentprivate static containingAssignment1: ShapeTreeAssignment;
+   private static assignment1: ShapeTreeAssignment;
+   private static assignment2: ShapeTreeAssignment;
+   private static assignment3: ShapeTreeAssignment;
+   private static nonContainingAssignment1: ShapeTreeAssignment;
+   private static nonContainingAssignment2: ShapeTreeAssignment;
+   private static containingAssignment1: ShapeTreeAssignment;
 
    private static dispatcher: RequestMatchingFixtureDispatcher = null;
 
    private static httpExternalDocumentLoader: HttpExternalDocumentLoader;
 
   public constructor() {
-    httpExternalDocumentLoader = new HttpExternalDocumentLoader();
-    DocumentLoaderManager.setLoader(httpExternalDocumentLoader);
+    ShapeTreeManagerTests.httpExternalDocumentLoader = new HttpExternalDocumentLoader();
+    DocumentLoaderManager.setLoader(ShapeTreeManagerTests.httpExternalDocumentLoader);
   }
 
   // @BeforeAll
   static beforeAll(): void /* throws MalformedURLException, ShapeTreeException */ {
-    dispatcher = new RequestMatchingFixtureDispatcher(List.of(new DispatcherEntry(List.of("shapetrees/manager-shapetree-ttl"), "GET", "/static/shapetrees/managers/shapetree", null)));
-    server = new MockWebServer();
-    server.setDispatcher(dispatcher);
-    managerUrl = new URL("https://site.example/resource.shapetree");
-    assignment1 = new ShapeTreeAssignment(new URL("https://tree.example/tree#TreeOne"), new URL("https://site.example/resource"), new URL("https://site.example/resource.shapetree#ln1"), new URL("https://site.example/resource#node"), new URL("https://shapes.example/schema#ShapeOne"), new URL("https://site.example/resource.shapetree#ln1"));
-    assignment2 = new ShapeTreeAssignment(new URL("https://tree.example/tree#TreeTwo"), new URL("https://site.example/resource"), new URL("https://site.example/resource.shapetree#ln2"), new URL("https://site.example/resource#node"), new URL("https://shapes.example/schema#ShapeTwo"), new URL("https://site.example/resource.shapetree#ln2"));
-    assignment3 = new ShapeTreeAssignment(new URL("https://tree.example/tree#TreeThree"), new URL("https://site.example/resource"), new URL("https://site.example/resource.shapetree#ln3"), new URL("https://site.example/resource#node"), new URL("https://shapes.example/schema#ShapeThree"), new URL("https://site.example/resource.shapetree#ln3"));
-    nonContainingAssignment1 = new ShapeTreeAssignment(toUrl(server, "/static/shapetrees/managers/shapetree#NonContainingTree"), toUrl(server, "/data/container/"), toUrl(server, "/data/container/.shapetree#ln1"), null, null, toUrl(server, "/data/container/.shapetree#ln1"));
-    containingAssignment1 = new ShapeTreeAssignment(toUrl(server, "/static/shapetrees/managers/shapetree#ContainingTree"), toUrl(server, "/data/container/"), toUrl(server, "/data/container/.shapetree#ln2"), null, null, toUrl(server, "/data/container/.shapetree#ln2"));
-    nonContainingAssignment2 = new ShapeTreeAssignment(toUrl(server, "/static/shapetrees/managers/shapetree#NonContainingTree2"), toUrl(server, "/data/container/"), toUrl(server, "/data/container/.shapetree#ln3"), null, null, toUrl(server, "/data/container/.shapetree#ln3"));
+    ShapeTreeManagerTests.dispatcher = new RequestMatchingFixtureDispatcher([
+      new DispatcherEntry(["shapetrees/manager-shapetree-ttl"], "GET", "/static/shapetrees/managers/shapetree", null)
+    ]);
+    ShapeTreeManagerTests.server = getLocal({ debug: false });
+    ShapeTreeManagerTests.server.setDispatcher(ShapeTreeManagerTests.dispatcher);
+    ShapeTreeManagerTests.managerUrl = new URL("https://site.example/resource.shapetree");
+    ShapeTreeManagerTests.assignment1 = new ShapeTreeAssignment(new URL("https://tree.example/tree#TreeOne"), new URL("https://site.example/resource"), new URL("https://site.example/resource.shapetree#ln1"), new URL("https://site.example/resource#node"), new URL("https://shapes.example/schema#ShapeOne"), new URL("https://site.example/resource.shapetree#ln1"));
+    ShapeTreeManagerTests.assignment2 = new ShapeTreeAssignment(new URL("https://tree.example/tree#TreeTwo"), new URL("https://site.example/resource"), new URL("https://site.example/resource.shapetree#ln2"), new URL("https://site.example/resource#node"), new URL("https://shapes.example/schema#ShapeTwo"), new URL("https://site.example/resource.shapetree#ln2"));
+    ShapeTreeManagerTests.assignment3 = new ShapeTreeAssignment(new URL("https://tree.example/tree#TreeThree"), new URL("https://site.example/resource"), new URL("https://site.example/resource.shapetree#ln3"), new URL("https://site.example/resource#node"), new URL("https://shapes.example/schema#ShapeThree"), new URL("https://site.example/resource.shapetree#ln3"));
+    ShapeTreeManagerTests.nonContainingAssignment1 = new ShapeTreeAssignment(toUrl(ShapeTreeManagerTests.server, "/static/shapetrees/managers/shapetree#NonContainingTree"), toUrl(ShapeTreeManagerTests.server, "/data/container/"), toUrl(ShapeTreeManagerTests.server, "/data/container/.shapetree#ln1"), null, null, toUrl(ShapeTreeManagerTests.server, "/data/container/.shapetree#ln1"));
+    ShapeTreeManagerTests.containingAssignment1 = new ShapeTreeAssignment(toUrl(ShapeTreeManagerTests.server, "/static/shapetrees/managers/shapetree#ContainingTree"), toUrl(ShapeTreeManagerTests.server, "/data/container/"), toUrl(ShapeTreeManagerTests.server, "/data/container/.shapetree#ln2"), null, null, toUrl(ShapeTreeManagerTests.server, "/data/container/.shapetree#ln2"));
+    ShapeTreeManagerTests.nonContainingAssignment2 = new ShapeTreeAssignment(toUrl(ShapeTreeManagerTests.server, "/static/shapetrees/managers/shapetree#NonContainingTree2"), toUrl(ShapeTreeManagerTests.server, "/data/container/"), toUrl(ShapeTreeManagerTests.server, "/data/container/.shapetree#ln3"), null, null, toUrl(ShapeTreeManagerTests.server, "/data/container/.shapetree#ln3"));
   }
 
   // @BeforeEach
   beforeEach(): void {
-    manager = new ShapeTreeManager(managerUrl);
+    ShapeTreeManagerTests.manager = new ShapeTreeManager(ShapeTreeManagerTests.managerUrl);
   }
 
   // @SneakyThrows, @Test, @DisplayName("Initialize a new manager")
   initializeShapeTreeManager(): void {
-    let newManager: ShapeTreeManager = new ShapeTreeManager(managerUrl);
-    Assertions.assertNotNull(newManager);
-    Assertions.assertEquals(newManager.getId(), managerUrl);
+    let newManager: ShapeTreeManager = new ShapeTreeManager(ShapeTreeManagerTests.managerUrl);
+    expect(newManager).not.toBeNull();
+    expect(newManager.getId()).toEqual(ShapeTreeManagerTests.managerUrl);
   }
 
   // @SneakyThrows, @Test, @DisplayName("Add a new assignment")
   addNewShapeTreeAssignmentToManager(): void {
-    Assertions.assertTrue(manager.getAssignments().isEmpty());
-    manager.addAssignment(assignment1);
-    Assertions.assertFalse(manager.getAssignments().isEmpty());
-    Assertions.assertEquals(manager.getAssignments().size(), 1);
+    expect(ShapeTreeManagerTests.manager.getAssignments().length === 0).toEqual(true);
+    ShapeTreeManagerTests.manager.addAssignment(ShapeTreeManagerTests.assignment1);
+    expect(ShapeTreeManagerTests.manager.getAssignments().length === 0).toEqual(false);
+    expect(ShapeTreeManagerTests.manager.getAssignments().length).toEqual(1);
   }
 
   // @SneakyThrows, @Test, @DisplayName("Fail to add a null assignment")
   failToAddNullAssignmentToManager(): void {
-    Assertions.assertThrows(ShapeTreeException.class, () -> {
-      manager.addAssignment(null);
-    });
+    expect(async () => {
+      await ShapeTreeManagerTests.manager.addAssignment(null);
+    }).rejects.toBeInstanceOf(ShapeTreeException);
   }
 
   // @SneakyThrows, @Test, @DisplayName("Fail to add a duplicate assignment")
   failToAddDuplicateAssignment(): void {
-    manager.addAssignment(assignment1);
-    Assertions.assertThrows(ShapeTreeException.class, () -> {
-      manager.addAssignment(assignment1);
-    });
+    ShapeTreeManagerTests.manager.addAssignment(ShapeTreeManagerTests.assignment1);
+    expect(async () => {
+      await ShapeTreeManagerTests.manager.addAssignment(ShapeTreeManagerTests.assignment1);
+    }).rejects.toBeInstanceOf(ShapeTreeException);
   }
 
   // @Test, @DisplayName("Fail to add assignment with certain null values")
   failToAddAssignmentWithBadValues(): void {
-    Assertions.assertThrows(ShapeTreeException.class, () -> {
-      new ShapeTreeAssignment(null, new URL("https://site.example/resource"), null, new URL("https://site.example/resource#node"), new URL("https://shapes.example/schema#ShapeThree"), new URL("https://site.example/resource.shapetree#ln3"));
-    });
-    Assertions.assertThrows(ShapeTreeException.class, () -> {
+    expect(async () => {
+      await new ShapeTreeAssignment(null, new URL("https://site.example/resource"), null, new URL("https://site.example/resource#node"), new URL("https://shapes.example/schema#ShapeThree"), new URL("https://site.example/resource.shapetree#ln3"));
+    }).rejects.toBeInstanceOf(ShapeTreeException);
+    expect(async () => {
       // focus node with no shape
-      new ShapeTreeAssignment(new URL("https://tree.example/tree#TreeThree"), new URL("https://site.example/resource"), new URL("https://site.example/resource.shapetree#ln3"), new URL("https://site.example/resource#node"), null, new URL("https://site.example/resource.shapetree#ln3"));
-    });
-    Assertions.assertThrows(ShapeTreeException.class, () -> {
+      await new ShapeTreeAssignment(new URL("https://tree.example/tree#TreeThree"), new URL("https://site.example/resource"), new URL("https://site.example/resource.shapetree#ln3"), new URL("https://site.example/resource#node"), null, new URL("https://site.example/resource.shapetree#ln3"));
+    }).rejects.toBeInstanceOf(ShapeTreeException);
+    expect(async () => {
       // shape with no focus node
-      new ShapeTreeAssignment(new URL("https://tree.example/tree#TreeThree"), new URL("https://site.example/resource"), new URL("https://site.example/resource.shapetree#ln3"), null, new URL("https://shapes.example/schema#ShapeThree"), new URL("https://site.example/resource.shapetree#ln3"));
-    });
+      await new ShapeTreeAssignment(new URL("https://tree.example/tree#TreeThree"), new URL("https://site.example/resource"), new URL("https://site.example/resource.shapetree#ln3"), null, new URL("https://shapes.example/schema#ShapeThree"), new URL("https://site.example/resource.shapetree#ln3"));
+    }).rejects.toBeInstanceOf(ShapeTreeException);
   }
 
   // @SneakyThrows, @Test, @DisplayName("Fail to mint the same assignment twice")
   failToMintDuplicateAssignment(): void {
-    manager.addAssignment(assignment1);
-    let adjustedUrl: URL = manager.mintAssignmentUrl(assignment1.getUrl());
-    Assertions.assertNotEquals(assignment1.getUrl(), adjustedUrl);
+    ShapeTreeManagerTests.manager.addAssignment(ShapeTreeManagerTests.assignment1);
+    let adjustedUrl: URL = ShapeTreeManagerTests.manager.mintAssignmentUrl(ShapeTreeManagerTests.assignment1.getUrl());
+    expect(ShapeTreeManagerTests.assignment1.getUrl()).not.toEqual(adjustedUrl);
   }
 
   // @SneakyThrows, @Test, @DisplayName("Get containing shape tree assignment from shape tree manager")
-  getContainingShapeTreeAssignmentsFromManager(): void {
-    manager.addAssignment(nonContainingAssignment1);
-    manager.addAssignment(containingAssignment1);
-    Assertions.assertEquals(1, manager.getContainingAssignments().size());
-    Assertions.assertTrue(manager.getContainingAssignments().contains(containingAssignment1));
-    Assertions.assertFalse(manager.getContainingAssignments().contains(nonContainingAssignment1));
+  async getContainingShapeTreeAssignmentsFromManager(): Promise<void> {
+    ShapeTreeManagerTests.manager.addAssignment(ShapeTreeManagerTests.nonContainingAssignment1);
+    ShapeTreeManagerTests.manager.addAssignment(ShapeTreeManagerTests.containingAssignment1);
+    expect(1).toEqual((await ShapeTreeManagerTests.manager.getContainingAssignments()).length);
+    expect((await ShapeTreeManagerTests.manager.getContainingAssignments()).indexOf(ShapeTreeManagerTests.containingAssignment1) !== -1).toEqual(true);
+    expect((await ShapeTreeManagerTests.manager.getContainingAssignments()).indexOf(ShapeTreeManagerTests.nonContainingAssignment1) !== -1).toEqual(false);
   }
 
   // @SneakyThrows, @Test, @DisplayName("Get no containing shape tree assignment for shape tree manager")
-  getNoContainingShapeTreeAssignmentFromManager(): void {
-    manager.addAssignment(nonContainingAssignment1);
-    manager.addAssignment(nonContainingAssignment2);
-    Assertions.assertTrue(manager.getContainingAssignments().isEmpty());
+  async getNoContainingShapeTreeAssignmentFromManager(): Promise<void> {
+    ShapeTreeManagerTests.manager.addAssignment(ShapeTreeManagerTests.nonContainingAssignment1);
+    ShapeTreeManagerTests.manager.addAssignment(ShapeTreeManagerTests.nonContainingAssignment2);
+    expect((await ShapeTreeManagerTests.manager.getContainingAssignments()).length === 0).toEqual(true);
   }
 
   // @SneakyThrows, @Test, @DisplayName("Get no shape tree assignment for shape tree from manager with no assignments")
   getNoShapeTreeAssignmentsFromEmptyManager(): void {
-    Assertions.assertNull(manager.getAssignmentForShapeTree(new URL("https://tree.example/shapetree#ExampleTree")));
+    expect(ShapeTreeManagerTests.manager.getAssignmentForShapeTree(new URL("https://tree.example/shapetree#ExampleTree"))).toBeNull();
   }
 
   // @SneakyThrows, @Test, @DisplayName("Get shape tree assignment from manager for shape tree")
   getShapeTreeAssignmentFromManagerForShapeTree(): void {
-    manager.addAssignment(nonContainingAssignment1);
-    manager.addAssignment(nonContainingAssignment2);
-    manager.addAssignment(containingAssignment1);
-    Assertions.assertEquals(containingAssignment1, manager.getAssignmentForShapeTree(containingAssignment1.getShapeTree()));
+    ShapeTreeManagerTests.manager.addAssignment(ShapeTreeManagerTests.nonContainingAssignment1);
+    ShapeTreeManagerTests.manager.addAssignment(ShapeTreeManagerTests.nonContainingAssignment2);
+    ShapeTreeManagerTests.manager.addAssignment(ShapeTreeManagerTests.containingAssignment1);
+    expect(ShapeTreeManagerTests.containingAssignment1).toEqual(ShapeTreeManagerTests.manager.getAssignmentForShapeTree(ShapeTreeManagerTests.containingAssignment1.getShapeTree()));
   }
 
   // @SneakyThrows, @Test, @DisplayName("Get no shape tree assignment from manager without matching shape tree")
   getNoShapeTreeAssignmentForShapeTree(): void {
-    manager.addAssignment(nonContainingAssignment1);
-    manager.addAssignment(nonContainingAssignment2);
-    manager.addAssignment(containingAssignment1);
-    Assertions.assertNull(manager.getAssignmentForShapeTree(new URL("https://tree.example/shapetree#ExampleTree")));
+    ShapeTreeManagerTests.manager.addAssignment(ShapeTreeManagerTests.nonContainingAssignment1);
+    ShapeTreeManagerTests.manager.addAssignment(ShapeTreeManagerTests.nonContainingAssignment2);
+    ShapeTreeManagerTests.manager.addAssignment(ShapeTreeManagerTests.containingAssignment1);
+    expect(ShapeTreeManagerTests.manager.getAssignmentForShapeTree(new URL("https://tree.example/shapetree#ExampleTree"))).toBeNull();
   }
 
   // @SneakyThrows, @Test, @DisplayName("Fail to remove assignment from empty manager")
   failToRemoveAssignmentFromEmptyManager(): void {
-    Assertions.assertThrows(IllegalStateException.class, () -> {
-      manager.removeAssignment(containingAssignment1);
-    });
+    expect(async () => {
+      await ShapeTreeManagerTests.manager.removeAssignment(ShapeTreeManagerTests.containingAssignment1);
+    }).rejects.toBeInstanceOf(Error);
   }
 
   // @SneakyThrows, @Test, @DisplayName("Fail to remove assignment from empty manager")
   failToRemoveAssignmentMissingFromManager(): void {
-    manager.addAssignment(nonContainingAssignment1);
-    manager.addAssignment(nonContainingAssignment2);
-    Assertions.assertThrows(IllegalStateException.class, () -> {
-      manager.removeAssignment(containingAssignment1);
-    });
+    ShapeTreeManagerTests.manager.addAssignment(ShapeTreeManagerTests.nonContainingAssignment1);
+    ShapeTreeManagerTests.manager.addAssignment(ShapeTreeManagerTests.nonContainingAssignment2);
+    expect(async () => {
+      await ShapeTreeManagerTests.manager.removeAssignment(ShapeTreeManagerTests.containingAssignment1);
+    }).rejects.toBeInstanceOf(Error);
   }
 
   // @SneakyThrows, @Test, @DisplayName("Remove assignment from manager")
   removeAssignmentFromManager(): void {
-    manager.addAssignment(nonContainingAssignment1);
-    manager.addAssignment(nonContainingAssignment2);
-    manager.addAssignment(containingAssignment1);
-    Assertions.assertEquals(manager.getAssignmentForShapeTree(containingAssignment1.getShapeTree()), containingAssignment1);
-    manager.removeAssignment(containingAssignment1);
-    Assertions.assertNull(manager.getAssignmentForShapeTree(containingAssignment1.getShapeTree()));
+    ShapeTreeManagerTests.manager.addAssignment(ShapeTreeManagerTests.nonContainingAssignment1);
+    ShapeTreeManagerTests.manager.addAssignment(ShapeTreeManagerTests.nonContainingAssignment2);
+    ShapeTreeManagerTests.manager.addAssignment(ShapeTreeManagerTests.containingAssignment1);
+    expect(ShapeTreeManagerTests.manager.getAssignmentForShapeTree(ShapeTreeManagerTests.containingAssignment1.getShapeTree())).toEqual(ShapeTreeManagerTests.containingAssignment1);
+    ShapeTreeManagerTests.manager.removeAssignment(ShapeTreeManagerTests.containingAssignment1);
+    expect(ShapeTreeManagerTests.manager.getAssignmentForShapeTree(ShapeTreeManagerTests.containingAssignment1.getShapeTree())).toBeNull();
   }
 
   // @SneakyThrows, @Test, @DisplayName("Get valid assignment from graph")
-  getAssignmentFromGraph(): void {
-    let managerUri: URI = URI.create("https://data.example/container.shapetree");
-    let managerGraph: Graph = GraphHelper.readStringIntoGraph(managerUri, getValidManagerString(), "text/turtle");
-    let manager: ShapeTreeManager = ShapeTreeManager.getFromGraph(managerUri.toURL(), managerGraph);
-    Assertions.assertNotNull(manager);
-    Assertions.assertNotNull(manager.getAssignmentForShapeTree(new URL("https://tree.example/#Tree1")));
+  async getAssignmentFromGraph(): Promise<void> {
+    let managerUri: URL = new URL("https://data.example/container.shapetree");
+    let managerGraph: Store = await GraphHelper.readStringIntoModel(managerUri, this.getValidManagerString(), "text/turtle");
+    let manager: ShapeTreeManager = ShapeTreeManager.getFromGraph(managerUri, managerGraph);
+    expect(manager).not.toBeNull();
+    expect(manager.getAssignmentForShapeTree(new URL("https://tree.example/#Tree1"))).not.toBeNull();
   }
 
   // @SneakyThrows, @Test, @DisplayName("Fail to get assignment from graph due to missing triples")
-  failToGetAssignmentFromGraphMissingTriples(): void {
-    let managerUri: URI = URI.create("https://data.example/container.shapetree");
-    let managerGraph: Graph = GraphHelper.readStringIntoGraph(managerUri, getInvalidManagerMissingTriplesString(), "text/turtle");
-    Assertions.assertThrows(IllegalStateException.class, () -> {
-      ShapeTreeManager.getFromGraph(managerUrl, managerGraph);
-    });
+  async failToGetAssignmentFromGraphMissingTriples(): Promise<void> {
+    let managerUri: URL = new URL("https://data.example/container.shapetree");
+    let managerGraph: Store = await GraphHelper.readStringIntoModel(managerUri, this.getInvalidManagerMissingTriplesString(), "text/turtle");
+    expect(async () => {
+      await ShapeTreeManager.getFromGraph(ShapeTreeManagerTests.managerUrl, managerGraph);
+    }).rejects.toBeInstanceOf(Error);
   }
 
   // @SneakyThrows, @Test, @DisplayName("Fail to get assignment from graph due to unexpected values")
-  failToGetAssignmentFromGraphUnexpectedValues(): void {
-    let managerUri: URI = URI.create("https://data.example/container.shapetree");
-    let managerGraph: Graph = GraphHelper.readStringIntoGraph(managerUri, getInvalidManagerUnexpectedTriplesString(), "text/turtle");
-    Assertions.assertThrows(IllegalStateException.class, () -> {
-      ShapeTreeManager.getFromGraph(managerUrl, managerGraph);
-    });
+  async failToGetAssignmentFromGraphUnexpectedValues(): Promise<void> {
+    let managerUri: URL = new URL("https://data.example/container.shapetree");
+    let managerGraph: Store = await GraphHelper.readStringIntoModel(managerUri, this.getInvalidManagerUnexpectedTriplesString(), "text/turtle");
+    expect(async () => {
+      await ShapeTreeManager.getFromGraph(ShapeTreeManagerTests.managerUrl, managerGraph);
+    }).rejects.toBeInstanceOf(Error);
   }
 
   private getValidManagerString(): string {

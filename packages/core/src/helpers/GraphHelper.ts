@@ -1,6 +1,6 @@
 // Corresponding shapetrees-java package: com.janeirodigital.shapetrees.core.helpers
 import {BlankNode, DataFactory, Literal, NamedNode, Parser, Quad, Store, Triple, Writer} from 'n3';
-import {URL} from 'url';
+// import {URL} from 'url';
 import {ShapeTreeException} from '../exceptions/ShapeTreeException';
 import {Lang} from '../todo/Lang';
 

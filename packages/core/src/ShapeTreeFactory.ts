@@ -17,6 +17,7 @@ export class ShapeTreeFactory {
    private static readonly RDFS_LABEL: string = "http://www.w3.org/2000/01/rdf-schema#label";
 
    private static readonly localShapeTreeCache: Map<URL, ShapeTree> = new Map();
+   public static getLocalShapeTreeCache(): Map<URL, ShapeTree> { return ShapeTreeFactory.localShapeTreeCache; }
 
   /**
    * Looks up and parses the shape tree at <code>shapeTreeUrl</code>.

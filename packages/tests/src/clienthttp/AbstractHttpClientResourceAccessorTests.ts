@@ -1,20 +1,18 @@
 // Corresponding shapetrees-java package: com.janeirodigital.shapetrees.tests.clienthttp
-import { HttpClient } from '@shapetrees/clienthttp/src/HttpClient';
-import { HttpClientFactory } from '@shapetrees/clienthttp/src/HttpClientFactory';
-import { HttpResourceAccessor } from '@shapetrees/clienthttp/src/HttpResourceAccessor';
+import { HttpClient } from '@shapetrees/client-http/src/HttpClient';
+import { HttpClientFactory } from '@shapetrees/client-http/src/HttpClientFactory';
+import { HttpResourceAccessor } from '@shapetrees/client-http/src/HttpResourceAccessor';
 import { ShapeTreeException } from '@shapetrees/core/src/exceptions/ShapeTreeException';
 import { AbstractResourceAccessorTests } from '../AbstractResourceAccessorTests';
-import * as MethodOrderer from 'org/junit/jupiter/api';
-import * as TestMethodOrder from 'org/junit/jupiter/api';
 
-@TestMethodOrder(MethodOrderer.OrderAnnotation.class)
+// @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 export class AbstractHttpClientResourceAccessorTests extends AbstractResourceAccessorTests {
 
-   protected httpResourceAccessor: HttpResourceAccessor = null;
+   protected httpResourceAccessor: HttpResourceAccessor = null!; // handled in beforeAll
 
-   protected fetcher: HttpClient = null;
+   protected fetcher: HttpClient = null!; // handled in beforeAll
 
-   protected factory: HttpClientFactory = null;
+   protected factory: HttpClientFactory = null!; // handled in beforeAll
 
   public constructor() {
     super();

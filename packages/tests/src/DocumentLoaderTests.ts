@@ -4,7 +4,7 @@ import { DocumentLoaderManager } from '@shapetrees/core/src/contentloaders/Docum
 import { ExternalDocumentLoader } from '@shapetrees/core/src/contentloaders/ExternalDocumentLoader';
 import { ShapeTreeException } from '@shapetrees/core/src/exceptions/ShapeTreeException';
 
-@TestMethodOrder(MethodOrderer.OrderAnnotation.class)
+// @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 class DocumentLoaderTests {
 
   // @BeforeAll, @AfterAll
@@ -14,21 +14,21 @@ class DocumentLoaderTests {
 
   // @Test, @Order(1), @DisplayName("Fail to get missing document loader"), @SneakyThrows
   failToGetMissingDocumentLoader(): void {
-    Assertions.assertThrows(ShapeTreeException.class, () -> {
-      DocumentLoaderManager.getLoader();
-    });
+    expect(async () => {
+      await DocumentLoaderManager.getLoader();
+    }).rejects.toBeInstanceOf(ShapeTreeException);
   }
 
   // @Test, @Order(2), @DisplayName("Get document loader"), @SneakyThrows
   getDocumentLoader(): void {
     DocumentLoaderManager.setLoader(new TestDocumentLoader());
-    Assertions.assertNotNull(DocumentLoaderManager.getLoader());
+    expect(DocumentLoaderManager.getLoader()).not.toBeNull();
   }
 }
 
 class TestDocumentLoader implements ExternalDocumentLoader {
 
-  public loadExternalDocument(resourceURL: URL): DocumentResponse /* throws ShapeTreeException */ {
+  public async loadExternalDocument(resourceURL: URL): Promise<DocumentResponse> /* throws ShapeTreeException */ {
     return new DocumentResponse(null, null, 200);
   }
 }

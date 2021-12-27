@@ -3,10 +3,8 @@ import { ShapeTreeException } from '@shapetrees/core/src/exceptions/ShapeTreeExc
 import { ShapeTreeAssignment } from '@shapetrees/core/src/ShapeTreeAssignment';
 import { ShapeTreeManager } from '@shapetrees/core/src/ShapeTreeManager';
 import { ShapeTreeManagerDelta } from '@shapetrees/core/src/ShapeTreeManagerDelta';
-import * as Label from 'jdk/jfr';
-import * as MalformedURLException from 'java/net';
 
-@TestMethodOrder(MethodOrderer.OrderAnnotation.class)
+// @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 class ShapeTreeManagerDeltaTests {
 
    private static existingManager: ShapeTreeManager = null;
@@ -25,37 +23,37 @@ class ShapeTreeManagerDeltaTests {
 
   // @BeforeEach
   beforeEach(): void /* throws ShapeTreeException, MalformedURLException */ {
-    existingManager = new ShapeTreeManager(new URL("https://manager.example/#existing"));
-    updatedManager = new ShapeTreeManager(new URL("https://manager.example/#updated"));
-    assignmentOne = new ShapeTreeAssignment(// ShapeTree
+    ShapeTreeManagerDeltaTests.existingManager = new ShapeTreeManager(new URL("https://manager.example/#existing"));
+    ShapeTreeManagerDeltaTests.updatedManager = new ShapeTreeManager(new URL("https://manager.example/#updated"));
+    ShapeTreeManagerDeltaTests.assignmentOne = new ShapeTreeAssignment(// ShapeTree
     new URL("http://shapetrees.example/#firstTree"), // ManageableResource
     new URL("http://data.example/resourceOne"), // RootAssignment
     new URL("http://data.example/resourceOne.shapetree#assignmentOne"), // FocusNode
     new URL("http://data.example/resourceOne#focus"), // Shape
     new URL("http://shapes.example/#firstShape"), // Uri
     new URL("http://data.example/resourceOne.shapetree#assignmentOne"));
-    assignmentTwo = new ShapeTreeAssignment(// ShapeTree
+    ShapeTreeManagerDeltaTests.assignmentTwo = new ShapeTreeAssignment(// ShapeTree
     new URL("http://shapetrees.example/#secondTree"), // ManageableResource
     new URL("http://data.example/resourceTwo"), // RootAssignment
     new URL("http://data.example/resourceTwo.shapetree#assignmentTwo"), // FocusNode
     new URL("http://data.example/resourceTwo#focus"), // Shape
     new URL("http://shapes.example/#secondShape"), // Uri
     new URL("http://data.example/resourceTwo.shapetree#assignmentTwo"));
-    assignmentThree = new ShapeTreeAssignment(// ShapeTree
+    ShapeTreeManagerDeltaTests.assignmentThree = new ShapeTreeAssignment(// ShapeTree
     new URL("http://shapetrees.example/#thirdTree"), // ManageableResource
     new URL("http://data.example/resourceThree"), // RootAssignment
     new URL("http://data.example/resourceThree.shapetree#assignmentThree"), // FocusNode
     new URL("http://data.example/resourceThree#focus"), // Shape
     new URL("http://shapes.example/#thirdShape"), // Uri
     new URL("http://data.example/resourceThree.shapetree#assignmentThree"));
-    assignmentFour = new ShapeTreeAssignment(// ShapeTree
+    ShapeTreeManagerDeltaTests.assignmentFour = new ShapeTreeAssignment(// ShapeTree
     new URL("http://shapetrees.example/#fourthTree"), // ManageableResource
     new URL("http://data.example/resourceFour"), // RootAssignment
     new URL("http://data.example/resourceFour.shapetree#assignmentFour"), // FocusNode
     new URL("http://data.example/resourceFour#focus"), // Shape
     new URL("http://shapes.example/#fourthShape"), // Uri
     new URL("http://data.example/resourceFour.shapetree#assignmentFour"));
-    assignmentFive = new ShapeTreeAssignment(// ShapeTree
+    ShapeTreeManagerDeltaTests.assignmentFive = new ShapeTreeAssignment(// ShapeTree
     new URL("http://shapetrees.example/#fifthTree"), // ManageableResource
     new URL("http://data.example/resourceFive"), // RootAssignment
     new URL("http://data.example/resourceFive.shapetree#assignmentFive"), // FocusNode
@@ -68,30 +66,30 @@ class ShapeTreeManagerDeltaTests {
   deleteAllExistingAssignments(): void {
     // Compare an existing manager with multiple assignments with an empty updated manager
     // This should show that all assignments are removed with none left
-    existingManager.addAssignment(assignmentOne);
-    existingManager.addAssignment(assignmentTwo);
-    let delta: ShapeTreeManagerDelta = ShapeTreeManagerDelta.evaluate(existingManager, updatedManager);
-    Assertions.assertTrue(delta.getUpdatedAssignments().isEmpty());
-    Assertions.assertEquals(2, delta.getRemovedAssignments().size());
-    Assertions.assertTrue(delta.allRemoved());
-    Assertions.assertTrue(delta.getRemovedAssignments().contains(assignmentOne));
-    Assertions.assertTrue(delta.getRemovedAssignments().contains(assignmentTwo));
+    ShapeTreeManagerDeltaTests.existingManager.addAssignment(ShapeTreeManagerDeltaTests.assignmentOne);
+    ShapeTreeManagerDeltaTests.existingManager.addAssignment(ShapeTreeManagerDeltaTests.assignmentTwo);
+    let delta: ShapeTreeManagerDelta = ShapeTreeManagerDelta.evaluate(ShapeTreeManagerDeltaTests.existingManager, ShapeTreeManagerDeltaTests.updatedManager);
+    expect(delta.getUpdatedAssignments().length).toEqual(0);
+    expect(2).toEqual(delta.getRemovedAssignments().length);
+    expect(delta.allRemoved()).toEqual(true);
+    expect(delta.getRemovedAssignments().indexOf(ShapeTreeManagerDeltaTests.assignmentOne) !== -1).toEqual(true);
+    expect(delta.getRemovedAssignments().indexOf(ShapeTreeManagerDeltaTests.assignmentTwo) !== -1).toEqual(true);
   }
 
   // @SneakyThrows, @Test, @Label("Delete existing assignments and add new ones")
   deleteAllExistingAssignmentsAndAddNew(): void {
-    existingManager.addAssignment(assignmentOne);
-    existingManager.addAssignment(assignmentTwo);
-    updatedManager.addAssignment(assignmentThree);
-    let delta: ShapeTreeManagerDelta = ShapeTreeManagerDelta.evaluate(existingManager, updatedManager);
-    Assertions.assertTrue(delta.isUpdated());
-    Assertions.assertTrue(delta.wasReduced());
-    Assertions.assertFalse(delta.allRemoved());
-    Assertions.assertEquals(1, delta.getUpdatedAssignments().size());
-    Assertions.assertEquals(2, delta.getRemovedAssignments().size());
-    Assertions.assertTrue(delta.getUpdatedAssignments().contains(assignmentThree));
-    Assertions.assertTrue(delta.getRemovedAssignments().contains(assignmentOne));
-    Assertions.assertTrue(delta.getRemovedAssignments().contains(assignmentTwo));
+    ShapeTreeManagerDeltaTests.existingManager.addAssignment(ShapeTreeManagerDeltaTests.assignmentOne);
+    ShapeTreeManagerDeltaTests.existingManager.addAssignment(ShapeTreeManagerDeltaTests.assignmentTwo);
+    ShapeTreeManagerDeltaTests.updatedManager.addAssignment(ShapeTreeManagerDeltaTests.assignmentThree);
+    let delta: ShapeTreeManagerDelta = ShapeTreeManagerDelta.evaluate(ShapeTreeManagerDeltaTests.existingManager, ShapeTreeManagerDeltaTests.updatedManager);
+    expect(delta.isUpdated()).toEqual(true);
+    expect(delta.wasReduced()).toEqual(true);
+    expect(delta.allRemoved()).toEqual(false);
+    expect(1).toEqual(delta.getUpdatedAssignments().length);
+    expect(2).toEqual(delta.getRemovedAssignments().length);
+    expect(delta.getUpdatedAssignments().indexOf(ShapeTreeManagerDeltaTests.assignmentThree) !== -1).toEqual(true);
+    expect(delta.getRemovedAssignments().indexOf(ShapeTreeManagerDeltaTests.assignmentOne) !== -1).toEqual(true);
+    expect(delta.getRemovedAssignments().indexOf(ShapeTreeManagerDeltaTests.assignmentTwo) !== -1).toEqual(true);
   }
 
   // @SneakyThrows, @Test, @Label("Delete an assignment, update another, and add one")
@@ -99,113 +97,113 @@ class ShapeTreeManagerDeltaTests {
     // remove assignment one
     // update assignment two
     // add assignment four
-    let assignmentThreeUpdated: ShapeTreeAssignment = duplicateAssignment(assignmentThree, new URL("http://shapetrees.pub/appleTree"), null);
-    existingManager.addAssignment(assignmentOne);
-    existingManager.addAssignment(assignmentTwo);
-    existingManager.addAssignment(assignmentThree);
-    updatedManager.addAssignment(assignmentTwo);
-    updatedManager.addAssignment(assignmentThreeUpdated);
-    updatedManager.addAssignment(assignmentFour);
-    let delta: ShapeTreeManagerDelta = ShapeTreeManagerDelta.evaluate(existingManager, updatedManager);
-    Assertions.assertTrue(delta.isUpdated());
-    Assertions.assertTrue(delta.wasReduced());
-    Assertions.assertFalse(delta.allRemoved());
-    Assertions.assertEquals(2, delta.getUpdatedAssignments().size());
-    Assertions.assertEquals(1, delta.getRemovedAssignments().size());
-    Assertions.assertTrue(delta.getUpdatedAssignments().contains(assignmentThreeUpdated));
-    Assertions.assertTrue(delta.getUpdatedAssignments().contains(assignmentFour));
-    Assertions.assertTrue(delta.getRemovedAssignments().contains(assignmentOne));
+    let assignmentThreeUpdated: ShapeTreeAssignment = this.duplicateAssignment(ShapeTreeManagerDeltaTests.assignmentThree, new URL("http://shapetrees.pub/appleTree"), null);
+    ShapeTreeManagerDeltaTests.existingManager.addAssignment(ShapeTreeManagerDeltaTests.assignmentOne);
+    ShapeTreeManagerDeltaTests.existingManager.addAssignment(ShapeTreeManagerDeltaTests.assignmentTwo);
+    ShapeTreeManagerDeltaTests.existingManager.addAssignment(ShapeTreeManagerDeltaTests.assignmentThree);
+    ShapeTreeManagerDeltaTests.updatedManager.addAssignment(ShapeTreeManagerDeltaTests.assignmentTwo);
+    ShapeTreeManagerDeltaTests.updatedManager.addAssignment(assignmentThreeUpdated);
+    ShapeTreeManagerDeltaTests.updatedManager.addAssignment(ShapeTreeManagerDeltaTests.assignmentFour);
+    let delta: ShapeTreeManagerDelta = ShapeTreeManagerDelta.evaluate(ShapeTreeManagerDeltaTests.existingManager, ShapeTreeManagerDeltaTests.updatedManager);
+    expect(delta.isUpdated()).toEqual(true);
+    expect(delta.wasReduced()).toEqual(true);
+    expect(delta.allRemoved()).toEqual(false);
+    expect(2).toEqual(delta.getUpdatedAssignments().length);
+    expect(1).toEqual(delta.getRemovedAssignments().length);
+    expect(delta.getUpdatedAssignments().indexOf(assignmentThreeUpdated) !== -1).toEqual(true);
+    expect(delta.getUpdatedAssignments().indexOf(ShapeTreeManagerDeltaTests.assignmentFour) !== -1).toEqual(true);
+    expect(delta.getRemovedAssignments().indexOf(ShapeTreeManagerDeltaTests.assignmentOne) !== -1).toEqual(true);
   }
 
   // @SneakyThrows, @Test, @Label("Update assignment and add another")
   updateAssignmentAndAddAnother(): void {
-    let assignmentThreeUpdated: ShapeTreeAssignment = duplicateAssignment(assignmentThree, new URL("http://shapetrees.pub/appleTree"), null);
-    existingManager.addAssignment(assignmentThree);
-    updatedManager.addAssignment(assignmentThreeUpdated);
-    updatedManager.addAssignment(assignmentFour);
-    let delta: ShapeTreeManagerDelta = ShapeTreeManagerDelta.evaluate(existingManager, updatedManager);
-    Assertions.assertTrue(delta.isUpdated());
-    Assertions.assertFalse(delta.wasReduced());
-    Assertions.assertFalse(delta.allRemoved());
-    Assertions.assertEquals(2, delta.getUpdatedAssignments().size());
-    Assertions.assertEquals(0, delta.getRemovedAssignments().size());
-    Assertions.assertTrue(delta.getUpdatedAssignments().contains(assignmentThreeUpdated));
-    Assertions.assertTrue(delta.getUpdatedAssignments().contains(assignmentFour));
+    let assignmentThreeUpdated: ShapeTreeAssignment = this.duplicateAssignment(ShapeTreeManagerDeltaTests.assignmentThree, new URL("http://shapetrees.pub/appleTree"), null);
+    ShapeTreeManagerDeltaTests.existingManager.addAssignment(ShapeTreeManagerDeltaTests.assignmentThree);
+    ShapeTreeManagerDeltaTests.updatedManager.addAssignment(assignmentThreeUpdated);
+    ShapeTreeManagerDeltaTests.updatedManager.addAssignment(ShapeTreeManagerDeltaTests.assignmentFour);
+    let delta: ShapeTreeManagerDelta = ShapeTreeManagerDelta.evaluate(ShapeTreeManagerDeltaTests.existingManager, ShapeTreeManagerDeltaTests.updatedManager);
+    expect(delta.isUpdated()).toEqual(true);
+    expect(delta.wasReduced()).toEqual(false);
+    expect(delta.allRemoved()).toEqual(false);
+    expect(2).toEqual(delta.getUpdatedAssignments().length);
+    expect(0).toEqual(delta.getRemovedAssignments().length);
+    expect(delta.getUpdatedAssignments().indexOf(assignmentThreeUpdated) !== -1).toEqual(true);
+    expect(delta.getUpdatedAssignments().indexOf(ShapeTreeManagerDeltaTests.assignmentFour) !== -1).toEqual(true);
   }
 
   // @SneakyThrows, @Test, @Label("Delete assignment and update another")
   DeleteAssignmentAndUpdateAnother(): void {
-    let assignmentThreeUpdated: ShapeTreeAssignment = duplicateAssignment(assignmentThree, new URL("http://shapetrees.pub/appleTree"), null);
-    existingManager.addAssignment(assignmentTwo);
-    existingManager.addAssignment(assignmentThree);
-    updatedManager.addAssignment(assignmentThreeUpdated);
-    let delta: ShapeTreeManagerDelta = ShapeTreeManagerDelta.evaluate(existingManager, updatedManager);
-    Assertions.assertTrue(delta.isUpdated());
-    Assertions.assertTrue(delta.wasReduced());
-    Assertions.assertFalse(delta.allRemoved());
-    Assertions.assertEquals(1, delta.getUpdatedAssignments().size());
-    Assertions.assertEquals(1, delta.getRemovedAssignments().size());
-    Assertions.assertTrue(delta.getUpdatedAssignments().contains(assignmentThreeUpdated));
-    Assertions.assertTrue(delta.getRemovedAssignments().contains(assignmentTwo));
+    let assignmentThreeUpdated: ShapeTreeAssignment = this.duplicateAssignment(ShapeTreeManagerDeltaTests.assignmentThree, new URL("http://shapetrees.pub/appleTree"), null);
+    ShapeTreeManagerDeltaTests.existingManager.addAssignment(ShapeTreeManagerDeltaTests.assignmentTwo);
+    ShapeTreeManagerDeltaTests.existingManager.addAssignment(ShapeTreeManagerDeltaTests.assignmentThree);
+    ShapeTreeManagerDeltaTests.updatedManager.addAssignment(assignmentThreeUpdated);
+    let delta: ShapeTreeManagerDelta = ShapeTreeManagerDelta.evaluate(ShapeTreeManagerDeltaTests.existingManager, ShapeTreeManagerDeltaTests.updatedManager);
+    expect(delta.isUpdated()).toEqual(true);
+    expect(delta.wasReduced()).toEqual(true);
+    expect(delta.allRemoved()).toEqual(false);
+    expect(1).toEqual(delta.getUpdatedAssignments().length);
+    expect(1).toEqual(delta.getRemovedAssignments().length);
+    expect(delta.getUpdatedAssignments().indexOf(assignmentThreeUpdated) !== -1).toEqual(true);
+    expect(delta.getRemovedAssignments().indexOf(ShapeTreeManagerDeltaTests.assignmentTwo) !== -1).toEqual(true);
   }
 
   // @SneakyThrows, @Test, @Label("Add a new assignments to an empty set")
   AddNewAssignmentToEmptySet(): void {
-    updatedManager.addAssignment(assignmentOne);
-    updatedManager.addAssignment(assignmentTwo);
-    let delta: ShapeTreeManagerDelta = ShapeTreeManagerDelta.evaluate(existingManager, updatedManager);
-    Assertions.assertTrue(delta.isUpdated());
-    Assertions.assertFalse(delta.wasReduced());
-    Assertions.assertFalse(delta.allRemoved());
-    Assertions.assertEquals(2, delta.getUpdatedAssignments().size());
-    Assertions.assertEquals(0, delta.getRemovedAssignments().size());
-    Assertions.assertTrue(delta.getUpdatedAssignments().contains(assignmentOne));
-    Assertions.assertTrue(delta.getUpdatedAssignments().contains(assignmentTwo));
+    ShapeTreeManagerDeltaTests.updatedManager.addAssignment(ShapeTreeManagerDeltaTests.assignmentOne);
+    ShapeTreeManagerDeltaTests.updatedManager.addAssignment(ShapeTreeManagerDeltaTests.assignmentTwo);
+    let delta: ShapeTreeManagerDelta = ShapeTreeManagerDelta.evaluate(ShapeTreeManagerDeltaTests.existingManager, ShapeTreeManagerDeltaTests.updatedManager);
+    expect(delta.isUpdated()).toEqual(true);
+    expect(delta.wasReduced()).toEqual(false);
+    expect(delta.allRemoved()).toEqual(false);
+    expect(2).toEqual(delta.getUpdatedAssignments().length);
+    expect(0).toEqual(delta.getRemovedAssignments().length);
+    expect(delta.getUpdatedAssignments().indexOf(ShapeTreeManagerDeltaTests.assignmentOne) !== -1).toEqual(true);
+    expect(delta.getUpdatedAssignments().indexOf(ShapeTreeManagerDeltaTests.assignmentTwo) !== -1).toEqual(true);
   }
 
   // @SneakyThrows, @Test, @Label("Update existing assignments")
   UpdateExistingAssignment(): void {
-    let assignmentOneUpdated: ShapeTreeAssignment = duplicateAssignment(assignmentOne, null, new URL("http://data.example/resourceOne#Otherfocus"));
-    let assignmentTwoUpdated: ShapeTreeAssignment = duplicateAssignment(assignmentTwo, null, new URL("http://data.example/resourceTwo#Otherfocus"));
-    existingManager.addAssignment(assignmentOne);
-    existingManager.addAssignment(assignmentTwo);
-    updatedManager.addAssignment(assignmentOneUpdated);
-    updatedManager.addAssignment(assignmentTwoUpdated);
-    let delta: ShapeTreeManagerDelta = ShapeTreeManagerDelta.evaluate(existingManager, updatedManager);
-    Assertions.assertTrue(delta.isUpdated());
-    Assertions.assertFalse(delta.wasReduced());
-    Assertions.assertFalse(delta.allRemoved());
-    Assertions.assertEquals(2, delta.getUpdatedAssignments().size());
-    Assertions.assertEquals(0, delta.getRemovedAssignments().size());
-    Assertions.assertTrue(delta.getUpdatedAssignments().contains(assignmentOneUpdated));
-    Assertions.assertTrue(delta.getUpdatedAssignments().contains(assignmentTwoUpdated));
+    let assignmentOneUpdated: ShapeTreeAssignment = this.duplicateAssignment(ShapeTreeManagerDeltaTests.assignmentOne, null, new URL("http://data.example/resourceOne#Otherfocus"));
+    let assignmentTwoUpdated: ShapeTreeAssignment = this.duplicateAssignment(ShapeTreeManagerDeltaTests.assignmentTwo, null, new URL("http://data.example/resourceTwo#Otherfocus"));
+    ShapeTreeManagerDeltaTests.existingManager.addAssignment(ShapeTreeManagerDeltaTests.assignmentOne);
+    ShapeTreeManagerDeltaTests.existingManager.addAssignment(ShapeTreeManagerDeltaTests.assignmentTwo);
+    ShapeTreeManagerDeltaTests.updatedManager.addAssignment(assignmentOneUpdated);
+    ShapeTreeManagerDeltaTests.updatedManager.addAssignment(assignmentTwoUpdated);
+    let delta: ShapeTreeManagerDelta = ShapeTreeManagerDelta.evaluate(ShapeTreeManagerDeltaTests.existingManager, ShapeTreeManagerDeltaTests.updatedManager);
+    expect(delta.isUpdated()).toEqual(true);
+    expect(delta.wasReduced()).toEqual(false);
+    expect(delta.allRemoved()).toEqual(false);
+    expect(2).toEqual(delta.getUpdatedAssignments().length);
+    expect(0).toEqual(delta.getRemovedAssignments().length);
+    expect(delta.getUpdatedAssignments().indexOf(assignmentOneUpdated) !== -1).toEqual(true);
+    expect(delta.getUpdatedAssignments().indexOf(assignmentTwoUpdated) !== -1).toEqual(true);
   }
 
   // @Test, @Label("Compare two null managers")
   compareTwoNullManagers(): void {
-    Assertions.assertThrows(ShapeTreeException.class, () -> ShapeTreeManagerDelta.evaluate(null, null));
+    expect(() => ShapeTreeManagerDelta.evaluate(null, null)).rejects.toBeInstanceOf(ShapeTreeException);
   }
 
   // @SneakyThrows, @Test, @Label("Check null values on updated manager")
   checkNullsOnUpdatedManager(): void {
-    existingManager.addAssignment(assignmentOne);
-    existingManager.addAssignment(assignmentTwo);
-    let delta: ShapeTreeManagerDelta = ShapeTreeManagerDelta.evaluate(existingManager, null);
-    Assertions.assertTrue(delta.allRemoved());
-    updatedManager.getAssignments().clear();
-    delta = ShapeTreeManagerDelta.evaluate(existingManager, updatedManager);
-    Assertions.assertTrue(delta.allRemoved());
+    ShapeTreeManagerDeltaTests.existingManager.addAssignment(ShapeTreeManagerDeltaTests.assignmentOne);
+    ShapeTreeManagerDeltaTests.existingManager.addAssignment(ShapeTreeManagerDeltaTests.assignmentTwo);
+    let delta: ShapeTreeManagerDelta = ShapeTreeManagerDelta.evaluate(ShapeTreeManagerDeltaTests.existingManager, null);
+    expect(delta.allRemoved()).toEqual(true);
+    ShapeTreeManagerDeltaTests.updatedManager.getAssignments().length = 0;
+    delta = ShapeTreeManagerDelta.evaluate(ShapeTreeManagerDeltaTests.existingManager, ShapeTreeManagerDeltaTests.updatedManager);
+    expect(delta.allRemoved()).toEqual(true);
   }
 
   // @SneakyThrows, @Test, @Label("Check null values on existing manager")
   checkNullsOnExistingManager(): void {
-    updatedManager.addAssignment(assignmentOne);
-    updatedManager.addAssignment(assignmentTwo);
-    let delta: ShapeTreeManagerDelta = ShapeTreeManagerDelta.evaluate(null, updatedManager);
-    Assertions.assertTrue(delta.isUpdated());
-    existingManager.getAssignments().clear();
-    delta = ShapeTreeManagerDelta.evaluate(existingManager, updatedManager);
-    Assertions.assertTrue(delta.isUpdated());
+    ShapeTreeManagerDeltaTests.updatedManager.addAssignment(ShapeTreeManagerDeltaTests.assignmentOne);
+    ShapeTreeManagerDeltaTests.updatedManager.addAssignment(ShapeTreeManagerDeltaTests.assignmentTwo);
+    let delta: ShapeTreeManagerDelta = ShapeTreeManagerDelta.evaluate(null, ShapeTreeManagerDeltaTests.updatedManager);
+    expect(delta.isUpdated()).toEqual(true);
+    ShapeTreeManagerDeltaTests.existingManager.getAssignments().length = 0;
+    delta = ShapeTreeManagerDelta.evaluate(ShapeTreeManagerDeltaTests.existingManager, ShapeTreeManagerDeltaTests.updatedManager);
+    expect(delta.isUpdated()).toEqual(true);
   }
 
   private duplicateAssignment(assignment: ShapeTreeAssignment, /*const*/ shapeTree: URL, /*const*/ focusNode: URL): ShapeTreeAssignment /* throws MalformedURLException, ShapeTreeException */ {

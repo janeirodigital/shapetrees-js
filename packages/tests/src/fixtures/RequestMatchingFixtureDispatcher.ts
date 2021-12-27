@@ -1,127 +1,143 @@
 // Corresponding shapetrees-java package: com.janeirodigital.shapetrees.tests.fixtures
-import * as Dispatcher from 'okhttp3/mockwebserver';
-import * as MockResponse from 'okhttp3/mockwebserver';
-import * as RecordedRequest from 'okhttp3/mockwebserver';
-import * as NotNull from 'org/jetbrains/annotations';
 import { DispatcherEntry } from './DispatcherEntry';
+import {CompletedRequest} from "mockttp";
+import {CallbackResponseResult} from "mockttp/dist/rules/requests/request-handlers";
+import {Fixture} from "./Fixture";
+import * as log from 'loglevel';
+import { URL } from "url";
+import { CallbackResponseMessageResult } from "mockttp/src/rules/requests/request-handlers";
+import { Headers } from 'mockttp/src/types'
+import { HeadersMultiMap } from '@shapetrees/core/src/todo/HeadersMultiMap';
 
-export class RequestMatchingFixtureDispatcher extends Dispatcher {
+export class RequestMatchingFixtureDispatcher {
 
    configuredFixtures: Array<DispatcherEntry>;
 
-   private readonly fixtureHitCounts: Map<DispatcherEntry, number> = new Map<>();
+   private readonly fixtureHitCounts: Map<DispatcherEntry, number> = new Map();
 
   public constructor(configuredFixtures: Array<DispatcherEntry>) {
     this.configuredFixtures = configuredFixtures;
   }
 
   // @NotNull
-  override public dispatch(@NotNull recordedRequest: RecordedRequest): MockResponse {
-    for (const entry of configuredFixtures) {
-      if (matchesRequest(recordedRequest, entry)) {
-        let fixtureName: string = getFixtureName(entry);
+  public dispatch(recordedRequest: CompletedRequest): CallbackResponseMessageResult {
+    for (const entry of this.configuredFixtures) {
+      if (this.matchesRequest(recordedRequest, entry)) {
+        let fixtureName: string = this.getFixtureName(entry)!; // TODO: could be null
         try {
-          let resp: MockResponse = Fixture.parseFrom(fixtureName, recordedRequest).toMockResponse();
-          // status isn't a number, it's e.g. "HTTP/1.1 200 OK"
-          if (resp.getStatus().contains("200") && recordedRequest.getMethod() === "POST") {
-            const msg: string = "Mock: response to POST " + recordedRequest + " with " + entry + " returns " + resp.getStatus();
+          const serverBaseUrl = new URL(recordedRequest.url)
+          const serverBase = serverBaseUrl.protocol + "://" + serverBaseUrl.hostname + ":" + serverBaseUrl.port;
+          let resp: CallbackResponseMessageResult = Fixture.parseFrom(fixtureName, serverBase).toMockResponse();
+          if (resp.statusCode === 200 && recordedRequest.method === "POST") {
+            const msg: string = "Mock: response to POST " + recordedRequest + " with " + entry + " returns " + resp.statusCode;
             log.error(msg);
             // This will show up in a stack trace,
-            resp.setStatus("HTTP/1.1 999 " + msg);
+            resp.statusCode = 999;
             // but we can add it as a body as well.
-            resp.setBody(msg);
+            resp.body = msg;
           }
           return resp;
-        } catch (ex) {
- if (ex instanceof Exception) {
-          let msg: string = ex.getMessage();
-          let resp: MockResponse = new MockResponse();
-          // log.error(msg);
-          ex.printStackTrace();
-          // This will show up in a stack trace,
-          resp.setStatus("HTTP/1.1 999 " + msg);
-          // but we can add it as a body as well.
-          resp.setBody(msg);
+        } catch (ex: any) {
+          let msg: string = ex.message;
+          const headers: Headers = {};
+          const exceptionResponse: CallbackResponseMessageResult = {
+              statusCode: 999,
+              body: msg,
+              headers: headers
+          };
+          console.error(ex);
+          log.error(msg);
+          return exceptionResponse;
         }
-}
       }
     }
-    log.error("Mock: no response found for {} {}", recordedRequest.getMethod(), recordedRequest.getPath());
-    return new MockResponse().setResponseCode(404);
+    const failureMessage = `Mock: no response found for ${recordedRequest.method} ${recordedRequest.path}`
+    log.error(failureMessage);
+    return {
+        statusCode: 404,
+        body: failureMessage,
+    };
   }
+    /*
 
-  public getFixtureByPath(expectedPath: string): DispatcherEntry {
-    for (const entry of this.configuredFixtures) {
-      if (entry.getExpectedPath() === expectedPath) {
-        return entry;
+      public getFixtureByPath(expectedPath: string): DispatcherEntry {
+        for (const entry of this.configuredFixtures) {
+          if (entry.getExpectedPath() === expectedPath) {
+            return entry;
+          }
+        }
+        return null;
       }
-    }
-    return null;
-  }
 
-  public removeFixtureByPath(expectedPath: string): void {
-    let fixture: DispatcherEntry = getFixtureByPath(expectedPath);
-    if (fixture != null) {
-      this.configuredFixtures.remove(fixture);
-    }
-  }
-
-  private getFixtureName(entry: DispatcherEntry): string {
-    let hits: number;
-    if (!fixtureHitCounts.containsKey(entry)) {
-      fixtureHitCounts.put(entry, 1);
-      hits = 1;
-    } else {
-      let existingHits: number = fixtureHitCounts.get(entry);
-      existingHits++;
-      fixtureHitCounts.replace(entry, existingHits);
-      hits = existingHits;
-    }
-    if (entry.getFixtureNames().size() === 1) {
-      return entry.getFixtureNames().get(0);
-    } else if (entry.getFixtureNames().size() > 1) {
-      let listIndex: number = hits - 1;
-      if (listIndex >= entry.getFixtureNames().size()) {
-        return entry.getFixtureNames().get(entry.getFixtureNames().size() - 1);
+      public removeFixtureByPath(expectedPath: string): void {
+        let fixture: DispatcherEntry = getFixtureByPath(expectedPath);
+        if (fixture != null) {
+          this.configuredFixtures.remove(fixture);
+        }
       }
-      return entry.getFixtureNames().get(listIndex);
-    } else if (entry.getFixtureNames().size() < 1) {
-      return null;
-    }
-    return null;
-  }
+    */
+      private getFixtureName(entry: DispatcherEntry): string | null {
+        let hits: number;
+        if (!this.fixtureHitCounts.has(entry)) {
+          this.fixtureHitCounts.set(entry, 1);
+          hits = 1;
+        } else {
+          let existingHits: number = this.fixtureHitCounts.get(entry) || 0;
+          existingHits++;
+          this.fixtureHitCounts.set(entry, existingHits);
+          hits = existingHits;
+        }
+        if (entry.getFixtureNames().length === 1) {
+          return entry.getFixtureNames()[0];
+        } else if (entry.getFixtureNames().length > 1) {
+          let listIndex: number = hits - 1;
+          if (listIndex >= entry.getFixtureNames().length) {
+            return entry.getFixtureNames()[entry.getFixtureNames().length - 1];
+          }
+          return entry.getFixtureNames()[listIndex];
+        } else if (entry.getFixtureNames().length < 1) {
+          return null;
+        }
+        return null;
+      }
 
-  private matchesRequest(recordedRequest: RecordedRequest, configuredFixture: DispatcherEntry): boolean {
-    if (recordedRequest.getMethod() === null)
-      return false;
-    if (recordedRequest.getPath() === null)
-      return false;
-    if (!recordedRequest.getMethod() === configuredFixture.getExpectedMethod())
-      return false;
-    if (!recordedRequest.getPath() === configuredFixture.getExpectedPath())
-      return false;
-    if (configuredFixture.getExpectedHeaders() === null)
-      return true;
-    let recordedHeaders: Map<string, Array<string>> = recordedRequest.getHeaders().toMultimap();
-    for (const expectedHeader of configuredFixture.getExpectedHeaders().entrySet()) {
-      let expectedHeaderName: string = expectedHeader.getKey();
-      if (!recordedHeaders.containsKey(expectedHeaderName))
-        return false;
-      if (expectedHeader.getValue() === null)
-        return true;
-      for (const expectedHeaderValue of expectedHeader.getValue()) {
-        if (!recordedHeaders.get(expectedHeaderName).contains(expectedHeaderValue))
+      private matchesRequest(recordedRequest: CompletedRequest, configuredFixture: DispatcherEntry): boolean {
+        if (recordedRequest.method === null)
           return false;
+        if (recordedRequest.path === null)
+          return false;
+        if (recordedRequest.method !== configuredFixture.getExpectedMethod())
+          return false;
+        if (recordedRequest.path !== configuredFixture.getExpectedPath())
+          return false;
+        if (configuredFixture.getExpectedHeaders() === null)
+          return true;
+        let recordedHeaders = new HeadersMultiMap();
+        for (const [key, value] of Object.entries(recordedRequest.headers)) {
+            if (value === undefined) {
+            } else if (typeof value === 'string') { // repeated (link) headers appear to come in as a single, comma-separated string
+                recordedHeaders.replace(key, value);
+            } else {
+                recordedHeaders.set(key, value);
+            }
+        }
+        for (const [expectedHeaderName, expectedHeaderValues] of configuredFixture.getExpectedHeaders()!.entries()) {
+          if (!recordedHeaders.has(expectedHeaderName))
+            return false;
+          for (const expectedHeaderValue of expectedHeaderValues) {
+            if (recordedHeaders.get(expectedHeaderName)!.indexOf(expectedHeaderValue) === -1)
+              return false;
+          }
+        }
+        return true;
       }
-    }
-    return true;
-  }
+    /*
+      public getConfiguredFixtures(): Array<DispatcherEntry> {
+        return this.configuredFixtures;
+      }
 
-  public getConfiguredFixtures(): Array<DispatcherEntry> {
-    return this.configuredFixtures;
-  }
-
-  public getFixtureHitCounts(): Map<DispatcherEntry, number> {
-    return this.fixtureHitCounts;
-  }
+      public getFixtureHitCounts(): Map<DispatcherEntry, number> {
+        return this.fixtureHitCounts;
+      }
+    */
 }

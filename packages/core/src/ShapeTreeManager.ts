@@ -6,6 +6,7 @@ import { ShapeTreeVocabulary } from './vocabularies/ShapeTreeVocabulary';
 import { ShapeTreeAssignment } from './ShapeTreeAssignment';
 import { ShapeTree } from './ShapeTree';
 import {DataFactory, NamedNode, Quad, Store} from "n3";
+import {ShapeTreeFactory} from "./ShapeTreeFactory";
 
 /**
  * ShapeTreeManager
@@ -108,6 +109,20 @@ export class ShapeTreeManager {
       proposedAssignmentUrl = this.inventAssignmentUrl();
     }
     return proposedAssignmentUrl;
+  }
+
+  public async getContainingAssignments(): Promise<Array<ShapeTreeAssignment>> /* throws ShapeTreeException */ {
+
+    const containingAssignments: Array<ShapeTreeAssignment> = [];
+
+    for (let assignment of this.assignments.values()) {
+      const shapeTree = await ShapeTreeFactory.getShapeTree(assignment.getShapeTree());
+      if (shapeTree.getContains().length !== 0) {
+        containingAssignments.push(assignment);
+      }
+    }
+
+    return containingAssignments;
   }
 
   public static getFromGraph(id: URL, managerGraph: Store): ShapeTreeManager /* throws ShapeTreeException */ {

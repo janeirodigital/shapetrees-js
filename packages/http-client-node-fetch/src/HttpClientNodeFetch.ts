@@ -5,6 +5,7 @@ import { DocumentResponse } from '@shapetrees/core/src/DocumentResponse';
 import { ResourceAttributes } from '@shapetrees/core/src/ResourceAttributes';
 import { ShapeTreeException } from '@shapetrees/core/src/exceptions/ShapeTreeException';
 import { HttpClientNodeFetchValidatingInterceptor } from './HttpClientNodeFetchValidatingInterceptor';
+import { HeadersMultiMap } from '@shapetrees/core/src/todo/HeadersMultiMap';
 import fetch from 'node-fetch';
 import { Headers, Request, RequestInit, Response } from 'node-fetch';
 import https, {Agent} from 'https';
@@ -31,7 +32,7 @@ export class HttpClientNodeFetch implements HttpClient {
     const resp = await fetch(request.resourceURL.href, {
         method: request.method,
         body: request.body,
-        headers: request.headers?.toList(), // TODO: unsure a list is allowed
+        headers: request.headers?.toList(), // TODO: unsure if a list is allowed
     });
     let body: string | null = null;
     try {
@@ -41,7 +42,7 @@ export class HttpClientNodeFetch implements HttpClient {
     }
     const attrs = new ResourceAttributes();
     for (let key in resp.headers) {
-      if (HttpClientNodeFetch.ListHeaders.indexOf(key.toLowerCase()) !== -1) {
+      if (HeadersMultiMap.CommaSeparatedHeaders.indexOf(key.toLowerCase()) !== -1) {
           const values: string[] = resp.headers.get(key)!.split(/,/);
           attrs.setAll(key, values);
       } else {

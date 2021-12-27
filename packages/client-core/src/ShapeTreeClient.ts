@@ -64,15 +64,15 @@ export interface ShapeTreeClient {
    * @param context ShapeTreeContext that would be used for authentication purposes
    * @param parentContainer The container the created resource should be created within
    * @param focusNodes One or more nodes/subjects to use as the focus for shape validation
-   * @param targetShapeTrees One or more target shape trees the resource should be validated by
    * @param bodyString String representation of body of the created resource
    * @param contentType Content type to parse the bodyString parameter as
+   * @param targetShapeTrees One or more target shape trees the resource should be validated by
    * @param proposedName Proposed resource name (aka Slug) for the resulting resource
    * @param isContainer Specifies whether the newly created resource should be created as a container or not
    * @return DocumentResponse containing status and response headers/attributes
    * @throws ShapeTreeException ShapeTreeException
    */
-  postManagedInstance(context: ShapeTreeContext, parentContainer: URL, focusNodes: Array<URL>, targetShapeTrees: Array<URL>, bodyString: string, contentType: string, proposedName: string, isContainer: boolean): Promise<DocumentResponse> /* throws ShapeTreeException */;
+  postManagedInstance(context: ShapeTreeContext, parentContainer: URL, focusNodes: Array<URL>, bodyString: string, contentType: string, targetShapeTrees: Array<URL>, proposedName: string, isContainer: boolean): Promise<DocumentResponse> /* throws ShapeTreeException */;
 
   /**
    * Creates a resource via HTTP PUT that has been validated against the provided target shape tree

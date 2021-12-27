@@ -54,9 +54,9 @@ export class ShapeTree {
 
   public validateResource(targetResource: ManageableResource, focusNodeUrls: Array<URL>): Promise<ValidationResult> /* throws ShapeTreeException */;
 
-  public validateResource(requestedName: string | null, focusNodeUrls: Array<URL>, resourceType: ShapeTreeResourceType, bodyGraph: Store): Promise<ValidationResult> /* throws ShapeTreeException */;
+  public validateResource(requestedName: string | null, focusNodeUrls: Array<URL>| null, resourceType: ShapeTreeResourceType, bodyGraph: Store | null): Promise<ValidationResult> /* throws ShapeTreeException */;
 
-  public async validateResource(requestedName: ManageableResource | string | null, focusNodeUrls?: Array<URL>, resourceType?: Array<URL> | ShapeTreeResourceType | null, bodyGraph?: Store): Promise<ValidationResult> /* throws ShapeTreeException */ {
+  public async validateResource(requestedName: ManageableResource | string | null, focusNodeUrls?: Array<URL> | null, resourceType?: Array<URL> | ShapeTreeResourceType | null, bodyGraph?: Store | null): Promise<ValidationResult> /* throws ShapeTreeException */ {
 
       if (requestedName instanceof ManageableResource) {
           const targetResource = requestedName as ManageableResource;
@@ -79,7 +79,7 @@ export class ShapeTree {
     }
     // If the shape tree specifies a shape to validate, perform shape validation
     if (this.shape != null) {
-      if (focusNodeUrls === undefined) {
+      if (focusNodeUrls === undefined || focusNodeUrls === null) {
         focusNodeUrls = [];
       }
       return this.validateGraph(bodyGraph!, focusNodeUrls); // TODO: can bodyGraph be undefined here if arrived here by different prototype?
