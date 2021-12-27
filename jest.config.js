@@ -3,7 +3,7 @@ module.exports = {
   preset: 'ts-jest',
   testEnvironment: 'node',
   testMatch: [
-    "**/tests/src/*.ts"
+    "**/test/*.ts"
   ],
   // transformIgnorePatterns: ['.*node_modules/(?!@node-fetch)/'],
 };

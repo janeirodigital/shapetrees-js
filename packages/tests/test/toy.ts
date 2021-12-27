@@ -1,9 +1,9 @@
 import * as Fs from 'fs';
 import * as Path from 'path';
 import * as log from 'loglevel';
-import {DispatcherEntry} from "./fixtures/DispatcherEntry";
-import {RequestMatchingFixtureDispatcher} from "./fixtures/RequestMatchingFixtureDispatcher";
-import {DispatchEntryServer} from "./fixtures/DispatchEntryServer";
+import {DispatcherEntry} from "../src/fixtures/DispatcherEntry";
+import {RequestMatchingFixtureDispatcher} from "../src/fixtures/RequestMatchingFixtureDispatcher";
+import {DispatchEntryServer} from "../src/fixtures/DispatchEntryServer";
 import * as Yaml from 'js-yaml';
 /*
 tried node-fetch but got:

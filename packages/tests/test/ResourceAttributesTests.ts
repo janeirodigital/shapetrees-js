@@ -1,25 +1,23 @@
 // Corresponding shapetrees-java package: com.janeirodigital.shapetrees.tests
 import { ResourceAttributes } from '@shapetrees/core/src/ResourceAttributes';
 
-class ResourceAttributesTests {
-
-  // @Test, @DisplayName("Initialize empty ResourceAttributes"), @SneakyThrows
-  initializeEmptyResourceAttributes(): void {
+// initializeEmptyResourceAttributes
+test("Initialize empty ResourceAttributes", () => {
     let resourceAttributes: ResourceAttributes = new ResourceAttributes();
     expect(resourceAttributes).not.toBeNull();
-  }
+})
 
-  // @Test, @DisplayName("Initialize ResourceAttributes with value pair"), @SneakyThrows
-  initializeResourceAttributesWithPair(): void {
+// initializeResourceAttributesWithPair
+test("Initialize ResourceAttributes with value pair", () => {
     let attribute: string = "Attribute";
     let value: string = "Value";
     let resourceAttributes: ResourceAttributes = new ResourceAttributes(attribute, value);
     expect(resourceAttributes).not.toBeNull();
     expect(resourceAttributes.toMultimap().has(attribute)).toEqual(true);
-  }
+})
 
-  // @Test, @DisplayName("Initialize ResourceAttributes with Map"), @SneakyThrows
-  initializeResourceAttributesWithMap(): void {
+// initializeResourceAttributesWithMap
+test("Initialize ResourceAttributes with Map", () => {
     let attributeStrings1: Array<string> = new Array<string>();
     let attributeStrings2: Array<string> = new Array<string>();
     let attributesMap: Map<string, Array<string>> = new Map<string, Array<string>>();
@@ -32,10 +30,10 @@ class ResourceAttributesTests {
     let resourceAttributes: ResourceAttributes = new ResourceAttributes(attributesMap);
     expect(resourceAttributes).not.toBeNull();
     expect(resourceAttributes.toMultimap()).toEqual(attributesMap);
-  }
+})
 
-  // @Test, @DisplayName("Add pairs with MaybePlus"), @SneakyThrows
-  addPairsWithMaybePlus(): void {
+// addPairsWithMaybePlus
+test("Add pairs with MaybePlus", () => {
     let resourceAttributes: ResourceAttributes = new ResourceAttributes();
     expect(resourceAttributes).not.toBeNull();
     let resourceAttributes2: ResourceAttributes = resourceAttributes.maybePlus(null, "value");
@@ -54,10 +52,10 @@ class ResourceAttributesTests {
     expect(resourceAttributes3.toMultimap().size === 0).toEqual(false);
     expect(resourceAttributes3.toMultimap().has("Attributes")).toEqual(true);
     expect(resourceAttributes3.toMultimap().has("Attributes2")).toEqual(true);
-  }
+})
 
-  // @Test, @DisplayName("Add pairs with MaybeSet"), @SneakyThrows
-  addPairsWithMaybeSet(): void {
+// addPairsWithMaybeSet
+test("Add pairs with MaybeSet", () => {
     let resourceAttributes: ResourceAttributes = new ResourceAttributes();
     expect(resourceAttributes).not.toBeNull();
     resourceAttributes.maybeSet(null, "value");
@@ -76,5 +74,4 @@ class ResourceAttributesTests {
     resourceAttributes.maybeSet("First Attribute", "First Attribute Second Value");
     expect(1).toEqual(resourceAttributes.toMultimap().size);
     expect(2).toEqual(resourceAttributes.allValues("First Attribute").length);
-  }
-}
+})
