@@ -11,6 +11,7 @@
     "packages/core",
     "packages/client-core",
     "packages/client-http",
+    "packages/http-client-cross-fetch",
     "packages/http-client-node-fetch",
     "packages/tests"
   ],

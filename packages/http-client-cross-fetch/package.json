@@ -1,0 +1,35 @@
+{
+  "name": "@shpaetrees/http-client-cross-fetch",
+  "version": "0.0.1",
+  "description": "HTTP connector for the ShapeTress HTTP interface using cross-fetch",
+  "main": "dist/index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/janeirodigital/shapetrees-js.git"
+  },
+  "keywords": [
+    "solid",
+    "shapetrees",
+    "rdf"
+  ],
+  "author": "",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/janeirodigital/shapetrees-js/issues"
+  },
+  "homepage": "https://github.com/janeirodigital/shapetrees-js#readme",
+  "dependencies999": {
+    "@shpaetrees/http-client-cross-fetch": "file:packages/http-client-cross-fetch"
+  },
+  "dependencies": {
+    "cross-fetch": "^3.1.4",
+    "loglevel": "^1.8.0"
+  },
+  "devDependencies": {
+    "jest": "^27.4.5",
+    "typescript": "^4.5.3"
+  }
+}
