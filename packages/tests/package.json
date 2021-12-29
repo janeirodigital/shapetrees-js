@@ -4,7 +4,8 @@
   "description": "Test suite for ShapeTress",
   "main": "dist/index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "debug": "ts-node bin/harness.ts",
+    "test": "NODE_OPTIONS=--trace-warnings\\ --unhandled-rejections=strict ts-node bin/harness.ts"
   },
   "repository": {
     "type": "git",
