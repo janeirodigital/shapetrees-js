@@ -33,13 +33,16 @@ export class ShapeTreeAssignment {
 
   public constructor(shapeTree: URL, managedResource: URL, rootAssignment: URL, focusNode: URL | null, shape: URL | null, url: URL) /* throws ShapeTreeException */ {
     try {
+      if (shapeTree === null || managedResource === null || rootAssignment === null || url === null) {
+        throw new Error("non-nullable input parameter");
+      }
       this.shapeTree = shapeTree;
       this.managedResource = managedResource;
       this.rootAssignment = rootAssignment;
       this.url = url;
       if (shape != null) {
         this.shape = shape;
-        this.focusNode = focusNode;
+        this.focusNode = focusNode || (() => {throw new Error("Must provide a focus node for shape validation")})();
       } else {
         this.shape = null;
         if (focusNode !== null) {

@@ -76,22 +76,20 @@ test("Fail to add a duplicate assignment", () => {
 
 // TODO: test null checks prevented by typescript?
 // failToAddAssignmentWithBadValues
-/*
-
 test("Fail to add assignment with certain null values", () => {
-  expect(async () => {
-    await new ShapeTreeAssignment(
-      null,
+  expect(() => {
+    new ShapeTreeAssignment(
+      null!,
       new URL("https://site.example/resource"),
-      null,
+      null!,
       new URL("https://site.example/resource#node"),
       new URL("https://shapes.example/schema#ShapeThree"),
       new URL("https://site.example/resource.shapetree#ln3")
     );
-  }).rejects.toBeInstanceOf(ShapeTreeException);
-  expect(async () => {
+  }).toThrow(/Failed to initialize shape tree assignment/);
+  expect(() => {
     // focus node with no shape
-    await new ShapeTreeAssignment(
+    new ShapeTreeAssignment(
       new URL("https://tree.example/tree#TreeThree"),
       new URL("https://site.example/resource"),
       new URL("https://site.example/resource.shapetree#ln3"),
@@ -99,10 +97,10 @@ test("Fail to add assignment with certain null values", () => {
       null,
       new URL("https://site.example/resource.shapetree#ln3")
     );
-  }).rejects.toBeInstanceOf(ShapeTreeException);
-  expect(async () => {
+  }).toThrow(/Failed to initialize shape tree assignment/);
+  expect(() => {
     // shape with no focus node
-    await new ShapeTreeAssignment(
+    new ShapeTreeAssignment(
       new URL("https://tree.example/tree#TreeThree"),
       new URL("https://site.example/resource"),
       new URL("https://site.example/resource.shapetree#ln3"),
@@ -110,9 +108,8 @@ test("Fail to add assignment with certain null values", () => {
       new URL("https://shapes.example/schema#ShapeThree"),
       new URL("https://site.example/resource.shapetree#ln3")
     );
-  }).rejects.toBeInstanceOf(ShapeTreeException);
+  }).toThrow(/Failed to initialize shape tree assignment/);
 });
-*/
 
 // failToMintDuplicateAssignment
 test("Fail to mint the same assignment twice", () => {
