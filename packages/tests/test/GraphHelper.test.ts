@@ -35,9 +35,9 @@ test("rdf+xml content type", () => {
 });
 
 // parseInvalidTTL
-test("Parse invalid TTL", () => {
+test("Parse invalid TTL", async () => {
   let invalidTtl: string = "<#a> b c";
-  expect(async () => await GraphHelper.readStringIntoModel(new URL("https://example.com/a"), invalidTtl, "text/turtle")).rejects.toBeInstanceOf(ShapeTreeException);
+  await expect(async () => await GraphHelper.readStringIntoModel(new URL("https://example.com/a"), invalidTtl, "text/turtle")).rejects.toBeInstanceOf(ShapeTreeException);
 });
 
 // parseValidTTL
@@ -143,8 +143,8 @@ test("Store Blank Node with new Triple helper", () => {
 });
 
 // failedToStoreUnsupportedTypeAsTripleObject
-test("Fail to store Unsupported Type with new Triple helper", () => {
-  expect(async () => {
+test("Fail to store Unsupported Type with new Triple helper", async () => {
+  await expect(async () => {
     await newTriple(new URL("https://site.example/#a"), new URL("https://site.example/#b"), 35.6 as unknown as boolean);
   }).rejects.toBeInstanceOf(ShapeTreeException);
 });

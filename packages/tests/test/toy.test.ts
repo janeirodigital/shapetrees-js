@@ -58,7 +58,7 @@ test('GET path/1 -> 200', async () => {
 
 /*
 it("should test async errors",() => {
-    expect(async () => {
+    await expect(async () => {
         await asyncFunctionWithCustomError();
     }).rejects.toBeInstanceOf(MyError)
 

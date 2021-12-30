@@ -24,8 +24,8 @@ afterAll(() => {
 });
 
 // failToLoadMissingHttpDocument
-test("Fail to load missing document over http", () => {
-  expect(async () => {
+test("Fail to load missing document over http", async () => {
+  await expect(async () => {
     await httpExternalDocumentLoader.loadExternalDocument(server.urlFor("/static/shex/missing"));
   }).rejects.toBeInstanceOf(ShapeTreeException);
 });
@@ -42,9 +42,9 @@ test("Successfully load shape tree document over http", async () => {
 
 // handleInterruptedThreadOnLoadHttpDocument
 /*
-test("Successfully handle thread interruption", () => {
+test("Successfully handle thread interruption", async () => {
   Thread.currentThread().interrupt();
-  expect(async () => {
+  await expect(async () => {
     let shapeTreeDocument: DocumentResponse = await httpExternalDocumentLoader.loadExternalDocument(server.getURL("/static/shapetrees/validation/shapetree"));
   }).rejects.toBeInstanceOf(ShapeTreeException);
 });

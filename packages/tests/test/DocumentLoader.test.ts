@@ -9,8 +9,8 @@ beforeAll(() => {
 });
 
 // failToGetMissingDocumentLoader
-test("Fail to get missing document loader", () => {
-  expect(async () => {
+test("Fail to get missing document loader", async () => {
+  await expect(async () => {
     await DocumentLoaderManager.getLoader();
   }).rejects.toBeInstanceOf(ShapeTreeException);
 });

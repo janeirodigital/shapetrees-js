@@ -89,9 +89,9 @@ test("Get instance for managed resource from manager request", async () => {
 });
 
 // failToGetInstanceForMissingManageableResourceFromManager
-test("Fail to get instance for missing resource from manager request", () => {
+test("Fail to get instance for missing resource from manager request", async () => {
   // Note that in this request, the manager is also non-existent
-  expect(async () => {
+  await expect(async () => {
     let instance: ManageableInstance = await this.resourceAccessor.getInstance(this.context, this.server.urlFor("/static/resource/missing-resource-1.shapetree"));
   }).rejects.toBeInstanceOf(ShapeTreeException);
 });
@@ -143,11 +143,11 @@ test("Create instance from unmanaged resource", async () => {
 });
 
 // failToCreateInstanceFromExistingResource
-test("Fail to create instance from existing manageable resource", () => {
+test("Fail to create instance from existing manageable resource", async () => {
   // Resource exists - ERROR - can't create a manageable resource when one already exists
   // May need to populate this
   let headers: ResourceAttributes = new ResourceAttributes();
-  expect(async () => {
+  await expect(async () => {
     let instance: ManageableInstance = await this.resourceAccessor.createInstance(this.context, "PUT", this.server.urlFor("/static/resource/unmanaged-container-2/"), headers, "<#a> <#b> <#c>", "text/turtle");
   }).rejects.toBeInstanceOf(ShapeTreeException);
 });
@@ -164,9 +164,9 @@ test("Create instance from manager resource", async () => {
 });
 
 // failToCreateInstanceFromIsolatedManagerResource
-test("Fail to create instance from isolated manager resource", () => {
+test("Fail to create instance from isolated manager resource", async () => {
   let headers: ResourceAttributes = new ResourceAttributes();
-  expect(async () => {
+  await expect(async () => {
     let instance: ManageableInstance = await this.resourceAccessor.createInstance(this.context, "PUT", this.server.urlFor("/static/resource/missing-resource-2.shapetree"), headers, this.getProjectTwoManagerGraph(), "text/turtle");
   }).rejects.toBeInstanceOf(ShapeTreeException);
 });
@@ -189,9 +189,9 @@ test("Get a resource with an empty link header", async () => {
 });
 
 // failToAccessResourceWithInvalidUrlString
-test("Fail to get a resource with an invalid URL string", () => {
+test("Fail to get a resource with an invalid URL string", async () => {
   // TODO: Test: may as well deleted as it's only testing URL.create()
-  expect(async () => await this.resourceAccessor.getResource(this.context, new URL(":invalid"))).rejects.toBeInstanceOf(MalformedURLException);
+  await expect(async () => await this.resourceAccessor.getResource(this.context, new URL(":invalid"))).rejects.toBeInstanceOf(MalformedURLException);
   // TODO - this should also test create, update, delete, getContained, (also get/create instance)
 });
 

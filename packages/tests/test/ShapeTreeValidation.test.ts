@@ -116,7 +116,7 @@ test("Fail to validate shape when the shape resource cannot be found", async () 
   let fooBodyGraph: Store = await getFooBodyGraph(server.urlFor("/validation/valid-resource"));
   // Catch exception thrown when a shape in a shape tree cannot be found
   let focusNodeUrls: Array<URL> = [server.urlFor("/validation/valid-resource#foo")];
-  expect(async () => await shapeTree.validateResource(null, focusNodeUrls, ShapeTreeResourceType.RESOURCE, fooBodyGraph)).rejects.toBeInstanceOf(ShapeTreeException);
+  await expect(async () => await shapeTree.validateResource(null, focusNodeUrls, ShapeTreeResourceType.RESOURCE, fooBodyGraph)).rejects.toBeInstanceOf(ShapeTreeException);
 });
 
 // failToValidateMalformedShape
@@ -126,7 +126,7 @@ test("Fail to validate shape when the shape resource is malformed", async () => 
   let fooBodyGraph: Store = await getFooBodyGraph(server.urlFor("/validation/valid-resource"));
   // Catch exception thrown when a shape in a shape tree is invalid
   let focusNodeUrls: Array<URL> = [server.urlFor("/validation/valid-resource#foo")];
-  expect(async () => await shapeTree.validateResource(null, focusNodeUrls, ShapeTreeResourceType.RESOURCE, fooBodyGraph)).rejects.toBeInstanceOf(ShapeTreeException);
+  await expect(async () => await shapeTree.validateResource(null, focusNodeUrls, ShapeTreeResourceType.RESOURCE, fooBodyGraph)).rejects.toBeInstanceOf(ShapeTreeException);
 });
 
 // failToValidateWhenNoShapeInShapeTree

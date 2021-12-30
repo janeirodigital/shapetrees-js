@@ -59,16 +59,16 @@ test("Add a new assignment", () => {
 });
 
 // failToAddNullAssignmentToManager
-test("Fail to add a null assignment", () => {
-  expect(async () => {
+test("Fail to add a null assignment", async () => {
+  await expect(async () => {
     await manager.addAssignment(null);
   }).rejects.toBeInstanceOf(ShapeTreeException);
 });
 
 // failToAddDuplicateAssignment
-test("Fail to add a duplicate assignment", () => {
+test("Fail to add a duplicate assignment", async () => {
   manager.addAssignment(assignment1);
-  expect(async () => {
+  await expect(async () => {
     await manager.addAssignment(assignment1);
   }).rejects.toBeInstanceOf(ShapeTreeException);
 });
@@ -155,17 +155,17 @@ test("Get no shape tree assignment from manager without matching shape tree", ()
 });
 
 // failToRemoveAssignmentFromEmptyManager
-test("Fail to remove assignment from empty manager", () => {
-  expect(async () => {
+test("Fail to remove assignment from empty manager", async () => {
+  await expect(async () => {
     await manager.removeAssignment(containingAssignment1);
   }).rejects.toBeInstanceOf(Error);
 });
 
 // failToRemoveAssignmentMissingFromManager
-test("Fail to remove assignment from empty manager", () => {
+test("Fail to remove assignment from empty manager", async () => {
   manager.addAssignment(nonContainingAssignment1);
   manager.addAssignment(nonContainingAssignment2);
-  expect(async () => {
+  await expect(async () => {
     await manager.removeAssignment(containingAssignment1);
   }).rejects.toBeInstanceOf(Error);
 });
