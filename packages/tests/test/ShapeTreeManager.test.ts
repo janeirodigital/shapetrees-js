@@ -18,9 +18,8 @@ let assignment3: ShapeTreeAssignment = null!;
 let nonContainingAssignment1: ShapeTreeAssignment = null!;
 let nonContainingAssignment2: ShapeTreeAssignment = null!;
 let containingAssignment1: ShapeTreeAssignment = null!;
-let httpExternalDocumentLoader: HttpExternalDocumentLoader = null!;
 
-httpExternalDocumentLoader = new HttpExternalDocumentLoader();
+const httpExternalDocumentLoader = new HttpExternalDocumentLoader();
 DocumentLoaderManager.setLoader(httpExternalDocumentLoader);
 
 const server = new DispatchEntryServer();
