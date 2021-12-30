@@ -1,5 +1,4 @@
 // Corresponding shapetrees-java package: com.janeirodigital.shapetrees.tests
-import { DocumentResponse } from '@shapetrees/core/src/DocumentResponse';
 import { SchemaCache } from '@shapetrees/core/src/SchemaCache';
 import { DocumentLoaderManager } from '@shapetrees/core/src/contentloaders/DocumentLoaderManager';
 import { HttpExternalDocumentLoader } from '@shapetrees/core/src/contentloaders/HttpExternalDocumentLoader';
@@ -7,10 +6,9 @@ import { ShapeTreeException } from '@shapetrees/core/src/exceptions/ShapeTreeExc
 import { DispatcherEntry } from '../src/fixtures/DispatcherEntry';
 import { RequestMatchingFixtureDispatcher } from '../src/fixtures/RequestMatchingFixtureDispatcher';
 import { DispatchEntryServer } from '../src/fixtures/DispatchEntryServer';
-import * as ShExParser from '@shexjs/parser';
+import { buildSchemaCache } from "../src/buildSchemaCache";
 import * as ShExJ from 'shexj';
 type ShExSchema = ShExJ.Schema;
-import * as log from 'loglevel';
 
 const httpExternalDocumentLoader = new HttpExternalDocumentLoader();
 DocumentLoaderManager.setLoader(httpExternalDocumentLoader);
@@ -89,27 +87,3 @@ test("Preload cache", async () => {
 //   SchemaCache.putSchema(firstEntry.getKey(), firstEntry.getValue());
 //   expect(SchemaCache.getSchema(server.urlFor("/static/shex/project"))).not.toBeNull();
 // });
-
-async function buildSchemaCache(schemasToCache: Array<string>): Promise<Map<string, ShExSchema>> /* throws MalformedURLException, ShapeTreeException */ {
-  let schemaCache: Map<string, ShExSchema> = new Map();
-  log.info("Building schema cache");
-  for (const schemaUrl of schemasToCache) {
-    log.debug("Caching schema {}", schemaUrl);
-    let shexShapeSchema: DocumentResponse = await DocumentLoaderManager.getLoader().loadExternalDocument(new URL(schemaUrl));
-    if (!shexShapeSchema.isExists() || shexShapeSchema.getBody() === null) {
-      log.warn("Schema at {} doesn't exist or is empty", schemaUrl);
-      continue;
-    }
-
-    let shapeBody: string = shexShapeSchema.getBody()!;
-    const shexCParser = ShExParser.construct(schemaUrl, {});
-    try {
-      const schema: ShExSchema = shexCParser.parse(shapeBody);
-      schemaCache.set(schemaUrl, schema);
-    } catch (ex: any) {
-      log.error("Error parsing schema {}", schemaUrl);
-      log.error("Exception:", ex);
-    }
-  }
-  return schemaCache;
-}

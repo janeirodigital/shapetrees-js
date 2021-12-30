@@ -8,13 +8,13 @@ import { HttpExternalDocumentLoader } from '@shapetrees/core/src/contentloaders/
 import { ShapeTreeResourceType } from '@shapetrees/core/src/enums/ShapeTreeResourceType';
 import { ShapeTreeException } from '@shapetrees/core/src/exceptions/ShapeTreeException';
 import { GraphHelper } from '@shapetrees/core/src/helpers/GraphHelper';
-import { DispatcherEntry } from './fixtures/DispatcherEntry';
-import { RequestMatchingFixtureDispatcher } from './fixtures/RequestMatchingFixtureDispatcher';
+import { DispatcherEntry } from '../src/fixtures/DispatcherEntry';
+import { RequestMatchingFixtureDispatcher } from '../src/fixtures/RequestMatchingFixtureDispatcher';
 import { DispatchEntryServer } from '../src/fixtures/DispatchEntryServer';
 import * as ShExJ from 'shexj';
 type ShexSchema = ShExJ.Schema;
 import {Store} from "n3";
-import {SchemaCacheTests} from "../test/SchemaCache.test";
+import { buildSchemaCache } from "../src/buildSchemaCache";
 
 const httpExternalDocumentLoader = new HttpExternalDocumentLoader();
 DocumentLoaderManager.setLoader(httpExternalDocumentLoader);
@@ -25,8 +25,8 @@ const dispatcher = new RequestMatchingFixtureDispatcher([
   new DispatcherEntry(["shapetrees/containment-shapetree-ttl"], "GET", "/static/shapetrees/containment/shapetree", null), 
   new DispatcherEntry(["validation/validation-container"], "GET", "/validation/", null), 
   new DispatcherEntry(["validation/valid-resource"], "GET", "/validation/valid-resource", null), 
-  new DispatcherEntry(["validation/containment/container-1"], "GET", "/validation/container-1/", null), 
-  new DispatcherEntry(["validation/containment/container-1-multiplecontains-manager"], "GET", "/validation/container-1/.shapetree", null), 
+  // new DispatcherEntry(["validation/containment/container-1"], "GET", "/validation/container-1/", null),
+  // new DispatcherEntry(["validation/containment/container-1-multiplecontains-manager"], "GET", "/validation/container-1/.shapetree", null),
   new DispatcherEntry(["http/404"], "GET", "/static/shex/missing", null), 
   new DispatcherEntry(["http/404"], "GET", "/static/shapetrees/missing", null), 
   new DispatcherEntry(["schemas/validation-shex"], "GET", "/static/shex/validation", null), 
@@ -89,10 +89,10 @@ test("Validate shape", async () => {
   let shapeTree: ShapeTree = await ShapeTreeFactory.getShapeTree(server.urlFor("/static/shapetrees/validation/shapetree#FooTree"));
   // Validate shape with focus node
   let focusNodeUrls: Array<URL> = [server.urlFor("/validation/valid-resource#foo")];
-  result = await shapeTree.validateResource(null, focusNodeUrls, ShapeTreeResourceType.RESOURCE, await this.getFooBodyGraph(server.urlFor("/validation/valid-resource")));
+  result = await shapeTree.validateResource(null, focusNodeUrls, ShapeTreeResourceType.RESOURCE, await getFooBodyGraph(server.urlFor("/validation/valid-resource")));
   expect(result.isValid()).toEqual(true);
   // Validate shape without focus node
-  result = await shapeTree.validateResource(null, null, ShapeTreeResourceType.RESOURCE, await this.getFooBodyGraph(server.urlFor("/validation/valid-resource")));
+  result = await shapeTree.validateResource(null, null, ShapeTreeResourceType.RESOURCE, await getFooBodyGraph(server.urlFor("/validation/valid-resource")));
   expect(result.isValid()).toEqual(true);
 });
 
@@ -102,7 +102,7 @@ test("Fail to validate shape", async () => {
   let shapeTree: ShapeTree = await ShapeTreeFactory.getShapeTree(server.urlFor("/static/shapetrees/validation/shapetree#FooTree"));
   // Pass in body content that will fail validation of the shape associated with FooTree
   let focusNodeUrls: Array<URL> = [server.urlFor("/validation/valid-resource#foo")];
-  result = await shapeTree.validateResource(null, focusNodeUrls, ShapeTreeResourceType.RESOURCE, await this.getInvalidFooBodyGraph(server.urlFor("/validation/valid-resource")));
+  result = await shapeTree.validateResource(null, focusNodeUrls, ShapeTreeResourceType.RESOURCE, await getInvalidFooBodyGraph(server.urlFor("/validation/valid-resource")));
   expect(result.isValid()).toEqual(false);
 });
 
@@ -110,7 +110,7 @@ test("Fail to validate shape", async () => {
 test("Fail to validate shape when the shape resource cannot be found", async () => {
   let result: ValidationResult;
   let shapeTree: ShapeTree = await ShapeTreeFactory.getShapeTree(server.urlFor("/static/shapetrees/validation/shapetree#MissingShapeSchemaTree"));
-  let fooBodyGraph: Store = await this.getFooBodyGraph(server.urlFor("/validation/valid-resource"));
+  let fooBodyGraph: Store = await getFooBodyGraph(server.urlFor("/validation/valid-resource"));
   // Catch exception thrown when a shape in a shape tree cannot be found
   let focusNodeUrls: Array<URL> = [server.urlFor("/validation/valid-resource#foo")];
   expect(async () => await shapeTree.validateResource(null, focusNodeUrls, ShapeTreeResourceType.RESOURCE, fooBodyGraph)).rejects.toBeInstanceOf(ShapeTreeException);
@@ -120,7 +120,7 @@ test("Fail to validate shape when the shape resource cannot be found", async () 
 test("Fail to validate shape when the shape resource is malformed", async () => {
   let result: ValidationResult;
   let shapeTree: ShapeTree = await ShapeTreeFactory.getShapeTree(server.urlFor("/static/shapetrees/validation/shapetree#InvalidShapeSchemaTree"));
-  let fooBodyGraph: Store = await this.getFooBodyGraph(server.urlFor("/validation/valid-resource"));
+  let fooBodyGraph: Store = await getFooBodyGraph(server.urlFor("/validation/valid-resource"));
   // Catch exception thrown when a shape in a shape tree is invalid
   let focusNodeUrls: Array<URL> = [server.urlFor("/validation/valid-resource#foo")];
   expect(async () => await shapeTree.validateResource(null, focusNodeUrls, ShapeTreeResourceType.RESOURCE, fooBodyGraph)).rejects.toBeInstanceOf(ShapeTreeException);
@@ -144,23 +144,23 @@ test("Validate shape before it is cached in schema cache", async () => {
   let shapeTree: ShapeTree = await ShapeTreeFactory.getShapeTree(server.urlFor("/static/shapetrees/validation/shapetree#FooTree"));
   // Validate shape with focus node
   let focusNodeUrls: Array<URL> = [server.urlFor("/validation/valid-resource#foo")];
-  result = await shapeTree.validateResource(null, focusNodeUrls, ShapeTreeResourceType.RESOURCE, await this.getFooBodyGraph(server.urlFor("/validation/valid-resource")));
+  result = await shapeTree.validateResource(null, focusNodeUrls, ShapeTreeResourceType.RESOURCE, await getFooBodyGraph(server.urlFor("/validation/valid-resource")));
   expect(result.isValid()).toEqual(true);
 });
 
 // validateShapeAfterCaching
 test("Validate shape after it is cached in schema cache", async () => {
   let result: ValidationResult;
-  let schemas: Map<string, ShexSchema> = SchemaCacheTests.buildSchemaCache([server.urlFor("/static/shex/validation").toString()]);
+  let schemas: Map<string, ShexSchema> = await buildSchemaCache([server.urlFor("/static/shex/validation").toString()]);
   SchemaCache.initializeCache(schemas);
   let shapeTree: ShapeTree = await ShapeTreeFactory.getShapeTree(server.urlFor("/static/shapetrees/validation/shapetree#FooTree"));
   // Validate shape with focus node
   let focusNodeUrls: Array<URL> = [server.urlFor("/validation/valid-resource#foo")];
-  result = await shapeTree.validateResource(null, focusNodeUrls, ShapeTreeResourceType.RESOURCE, await this.getFooBodyGraph(server.urlFor("/validation/valid-resource")));
+  result = await shapeTree.validateResource(null, focusNodeUrls, ShapeTreeResourceType.RESOURCE, await getFooBodyGraph(server.urlFor("/validation/valid-resource")));
   expect(result.isValid()).toEqual(true);
 });
 
-private getFooBodyGraph(baseUrl: URL): Promise<Store> /* throws ShapeTreeException */ {
+function getFooBodyGraph(baseUrl: URL): Promise<Store> /* throws ShapeTreeException */ {
   let body: string = "PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> \n" +
     "PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#> \n" +
     "PREFIX xml: <http://www.w3.org/XML/1998/namespace> \n" +
@@ -173,7 +173,7 @@ private getFooBodyGraph(baseUrl: URL): Promise<Store> /* throws ShapeTreeExcepti
   return GraphHelper.readStringIntoModel(baseUrl, body, "text/turtle");
 }
 
-private getInvalidFooBodyGraph(baseUrl: URL): Promise<Store> /* throws ShapeTreeException */ {
+function getInvalidFooBodyGraph(baseUrl: URL): Promise<Store> /* throws ShapeTreeException */ {
   let body: string = "PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> \n" +
     "PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#> \n" +
     "PREFIX xml: <http://www.w3.org/XML/1998/namespace> \n" +
@@ -185,7 +185,7 @@ private getInvalidFooBodyGraph(baseUrl: URL): Promise<Store> /* throws ShapeTree
   return GraphHelper.readStringIntoModel(baseUrl, body, "text/turtle");
 }
 
-private getAttributeOneBodyGraph(): string {
+function getAttributeOneBodyGraph(): string {
   return "PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> \n" +
     "PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#> \n" +
     "PREFIX xml: <http://www.w3.org/XML/1998/namespace> \n" +
