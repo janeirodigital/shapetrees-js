@@ -21,7 +21,7 @@ const dispatcher = new RequestMatchingFixtureDispatcher([
 beforeAll(() => { return server.start(dispatcher); });
 afterAll(() => { return server.stop(); });
 
-beforeAll(() => {
+afterEach(() => {
   SchemaCache.unInitializeCache();
 });
 
@@ -59,7 +59,7 @@ test("Initialize cache", () => {
 
 // testPreloadCache
 test("Preload cache", async () => {
-  let schemas: Map<string, ShExSchema> = await buildSchemaCache([server.urlFor("/static/shex/project").toString()]);
+  const schemas: Map<string, ShExSchema> = await buildSchemaCache([server.urlFor("/static/shex/project").toString()]);
   SchemaCache.initializeCache(schemas);
   expect(SchemaCache.containsSchema(server.urlFor("/static/shex/project"))).toEqual(true);
 });
@@ -68,10 +68,8 @@ test("Preload cache", async () => {
 // test("Clear put get", async () => {
 //   SchemaCache.clearCache();
 //   expect(SchemaCache.getSchema(server.urlFor("/static/shex/project"))).toBeNull();
-//   let schemas: Map<string, ShExSchema> = await buildSchemaCache([server.urlFor("/static/shex/project").toString()]);
-//   let firstEntry: Map.Entry<URL, ShExSchema> = schemas.entrySet().stream().findFirst().orElse(null);
-//   if (firstEntry === null)
-//     return;
+//   const schemas: Map<string, ShExSchema> = await buildSchemaCache([server.urlFor("/static/shex/project").toString()]);
+//   const firstEntry: Map.Entry<URL, ShExSchema> = schemas.entrySet().stream().findFirst().orElse(null);
 //   SchemaCache.putSchema(firstEntry.getKey(), firstEntry.getValue());
 //   expect(SchemaCache.getSchema(server.urlFor("/static/shex/project"))).not.toBeNull();
 // });
@@ -80,10 +78,8 @@ test("Preload cache", async () => {
 // test("Null on cache contains", async () => {
 //   SchemaCache.clearCache();
 //   expect(SchemaCache.getSchema(server.urlFor("/static/shex/project"))).toBeNull();
-//   let schemas: Map<string, ShExSchema> = await buildSchemaCache([server.urlFor("/static/shex/project").toString()]);
-//   let firstEntry: Map.Entry<URL, ShExSchema> = schemas.entrySet().stream().findFirst().orElse(null);
-//   if (firstEntry === null)
-//     return;
+//   const schemas: Map<string, ShExSchema> = await buildSchemaCache([server.urlFor("/static/shex/project").toString()]);
+//   const firstEntry: Map.Entry<URL, ShExSchema> = schemas.entrySet().stream().findFirst().orElse(null);
 //   SchemaCache.putSchema(firstEntry.getKey(), firstEntry.getValue());
 //   expect(SchemaCache.getSchema(server.urlFor("/static/shex/project"))).not.toBeNull();
 // });

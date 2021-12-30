@@ -95,16 +95,16 @@ test("Parse Tree with references", async () => {
 test("Parse Tree with contains", async () => {
   let projectShapeTree: ShapeTree = await ShapeTreeFactory.getShapeTree(server.urlFor("/static/shapetrees/project/shapetree#ProjectTree"));
   expect(projectShapeTree).not.toBeNull();
-  expect(projectShapeTree.getContains().indexOf(server.urlFor("/static/shapetrees/project/shapetree#MilestoneTree")) === -1).toEqual(true);
+  expect(projectShapeTree.getContains().map(u => u.href).indexOf("/static/shapetrees/project/shapetree#MilestoneTree") === -1).toEqual(true);
 });
 
 // parseShapeTreeContainsReservedTypes
 test("Parse Tree that allows reserved resource types", async () => {
   let reservedShapeTree: ShapeTree = await ShapeTreeFactory.getShapeTree(server.urlFor("/static/shapetrees/reserved/shapetree#EverythingTree"));
   expect(reservedShapeTree).not.toBeNull();
-  expect(reservedShapeTree.getContains().indexOf(server.urlFor("http://www.w3.org/ns/shapetrees#ResourceTree")) !== -1).toEqual(true);
-  expect(reservedShapeTree.getContains().indexOf(server.urlFor("http://www.w3.org/ns/shapetrees#NonRDFResourceTree")) !== -1).toEqual(true);
-  expect(reservedShapeTree.getContains().indexOf(server.urlFor("http://www.w3.org/ns/shapetrees#ContainerTree")) !== -1).toEqual(true);
+  expect(reservedShapeTree.getContains().map(u => u.href).indexOf("http://www.w3.org/ns/shapetrees#ResourceTree") !== -1).toEqual(true);
+  expect(reservedShapeTree.getContains().map(u => u.href).indexOf("http://www.w3.org/ns/shapetrees#NonRDFResourceTree") !== -1).toEqual(true);
+  expect(reservedShapeTree.getContains().map(u => u.href).indexOf("http://www.w3.org/ns/shapetrees#ContainerTree") !== -1).toEqual(true);
 });
 
 // // testTraverseReferences
@@ -117,33 +117,33 @@ test("Parse Tree that allows reserved resource types", async () => {
 
 // failToParseMissingExpectsType
 test("Fail to parse shape tree with missing expectsType", async () => {
-  expect(async () => await ShapeTreeFactory.getShapeTree(server.urlFor("/static/shapetrees/invalid/missing-expects-type#DataRepositoryTree"))).rejects.toBeInstanceOf(ShapeTreeException);
+  await expect(async () => await ShapeTreeFactory.getShapeTree(server.urlFor("/static/shapetrees/invalid/missing-expects-type#DataRepositoryTree"))).rejects.toBeInstanceOf(ShapeTreeException);
 });
 
 // failToParseBadExpectsTypeOnContains
 test("Fail to parse shape tree with st:contains but expects a non-container resource", async () => {
-  expect(async () => await ShapeTreeFactory.getShapeTree(server.urlFor("/static/shapetrees/invalid/contains-with-bad-expects-type#DataRepositoryTree"))).rejects.toBeInstanceOf(ShapeTreeException);
-  expect(async () => await ShapeTreeFactory.getShapeTree(server.urlFor("/static/shapetrees/invalid/contains-with-nonrdf-expects-type#DataRepositoryTree"))).rejects.toBeInstanceOf(ShapeTreeException);
+  await expect(async () => await ShapeTreeFactory.getShapeTree(server.urlFor("/static/shapetrees/invalid/contains-with-bad-expects-type#DataRepositoryTree"))).rejects.toBeInstanceOf(ShapeTreeException);
+  await expect(async () => await ShapeTreeFactory.getShapeTree(server.urlFor("/static/shapetrees/invalid/contains-with-nonrdf-expects-type#DataRepositoryTree"))).rejects.toBeInstanceOf(ShapeTreeException);
 });
 
 // failToParseBadObjectTypeOnContains
 test("Fail to parse shape tree with invalid object type", async () => {
-  expect(async () => await ShapeTreeFactory.getShapeTree(server.urlFor("/static/shapetrees/invalid/bad-object-type#DataRepositoryTree"))).rejects.toBeInstanceOf(ShapeTreeException);
+  await expect(async () => await ShapeTreeFactory.getShapeTree(server.urlFor("/static/shapetrees/invalid/bad-object-type#DataRepositoryTree"))).rejects.toBeInstanceOf(ShapeTreeException);
 });
 
 // failToParseMissingShapeTree
 test("Fail to parse missing shape tree", async () => {
-  expect(async () => await ShapeTreeFactory.getShapeTree(server.urlFor("/static/shapetrees/invalid/shapetree-missing#missing"))).rejects.toBeInstanceOf(ShapeTreeException);
+  await expect(async () => await ShapeTreeFactory.getShapeTree(server.urlFor("/static/shapetrees/invalid/shapetree-missing#missing"))).rejects.toBeInstanceOf(ShapeTreeException);
 });
 
 // failToParseShapeTreeWithInvalidContentType
 test("Fail to parse shape tree with invalid content type", async () => {
-  expect(async () => await ShapeTreeFactory.getShapeTree(server.urlFor("/static/shapetrees/project/shapetree-bad-content-type#bad"))).rejects.toBeInstanceOf(ShapeTreeException);
+  await expect(async () => await ShapeTreeFactory.getShapeTree(server.urlFor("/static/shapetrees/project/shapetree-bad-content-type#bad"))).rejects.toBeInstanceOf(ShapeTreeException);
 });
 
 // failToParseInvalidContainsObjects
 test("Fail to parse shape tree with invalid contains objects", async () => {
-  expect(async () => await ShapeTreeFactory.getShapeTree(server.urlFor("/static/shapetrees/invalid/shapetree-invalid-contains-objects#DataRepositoryTree"))).rejects.toBeInstanceOf(ShapeTreeException);
+  await expect(async () => await ShapeTreeFactory.getShapeTree(server.urlFor("/static/shapetrees/invalid/shapetree-invalid-contains-objects#DataRepositoryTree"))).rejects.toBeInstanceOf(ShapeTreeException);
 });
 
 // parseContainsAcrossMultipleDocuments

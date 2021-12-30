@@ -55,12 +55,12 @@ export class ShapeTreeFactory {
     let shapeTree: ShapeTree = new ShapeTree(shapeTreeUrl, expectsType, label, shape, references, contains);
     ShapeTreeFactory.localShapeTreeCache.set(shapeTreeUrl.href, shapeTree);
     // Recursively parse contained shape trees
-    for (const containedUrl of contains) {
-      ShapeTreeFactory.getShapeTree(containedUrl);
+    for (const containedUrl of contains) { // TODO: try awaiting Promise.all(map...)
+      await ShapeTreeFactory.getShapeTree(containedUrl);
     }
     // Recursively parse referenced shape trees
     for (const reference of references) {
-      ShapeTreeFactory.getShapeTree(reference.getReferenceUrl());
+      await ShapeTreeFactory.getShapeTree(reference.getReferenceUrl());
     }
     return shapeTree;
   }

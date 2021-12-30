@@ -12,8 +12,7 @@ export async function buildSchemaCache(schemasToCache: Array<string>): Promise<M
         log.debug("Caching schema {}", schemaUrl);
         let shexShapeSchema: DocumentResponse = await DocumentLoaderManager.getLoader().loadExternalDocument(new URL(schemaUrl));
         if (!shexShapeSchema.isExists() || shexShapeSchema.getBody() === null) {
-            log.warn("Schema at {} doesn't exist or is empty", schemaUrl);
-            continue;
+            throw new Error("Schema at <" + schemaUrl + "> doesn't exist or is empty");
         }
 
         let shapeBody: string = shexShapeSchema.getBody()!;

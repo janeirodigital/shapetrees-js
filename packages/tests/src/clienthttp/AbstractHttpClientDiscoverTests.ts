@@ -65,7 +65,7 @@ export class AbstractHttpClientDiscoverTests extends AbstractHttpClientTests {
     server.setDispatcher(AbstractHttpClientDiscoverTests.dispatcher);
     let targetResource: URL = server.toUrl("/managed-invalid-1");
     // If a manager resource has multiple shapetree managers it is considered invalid
-    expect(async () => {
+    await expect(async () => {
       let manager: ShapeTreeManager | null = await this.shapeTreeClient.discoverShapeTree(this.context, targetResource);
     }).rejects.toBeInstanceOf(Error);
   }
@@ -76,7 +76,7 @@ export class AbstractHttpClientDiscoverTests extends AbstractHttpClientTests {
     server.setDispatcher(AbstractHttpClientDiscoverTests.dispatcher);
     let targetResource: URL = server.toUrl("/managed-invalid-2");
     // If a manager resource exists, but has no managers it is considered invalid
-    expect(async () => {
+    await expect(async () => {
       let manager: ShapeTreeManager | null = await this.shapeTreeClient.discoverShapeTree(this.context, targetResource);
     }).rejects.toBeInstanceOf(Error);
   }
@@ -87,7 +87,7 @@ export class AbstractHttpClientDiscoverTests extends AbstractHttpClientTests {
     server.setDispatcher(AbstractHttpClientDiscoverTests.dispatcher);
     let targetResource: URL = server.toUrl("/no-manager");
     // If a manager resource exists, but has no managers it is considered invalid
-    expect(async () => {
+    await expect(async () => {
       let manager: ShapeTreeManager | null = await this.shapeTreeClient.discoverShapeTree(this.context, targetResource);
     }).rejects.toBeInstanceOf(ShapeTreeException);
   }
