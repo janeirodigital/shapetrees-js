@@ -5,7 +5,7 @@ import { ShapeTreeReference } from './ShapeTreeReference';
 import { ShapeTree } from './ShapeTree';
 import { ShapeTreeResource } from './ShapeTreeResource';
 import * as log from 'loglevel';
-import {DataFactory, NamedNode, QuadPredicate, Store, Term} from "n3";
+import {BlankNode, DataFactory, NamedNode, Quad_Subject, QuadPredicate, Store, Term} from "n3";
 
 /**
  * Provides a factory to look up and initialize ShapeTrees.
@@ -94,7 +94,14 @@ export class ShapeTreeFactory {
     let referencesProperty: NamedNode = DataFactory.namedNode(ShapeTreeVocabulary.REFERENCES);
     let referenceStatements = resourceModel.getQuads(DataFactory.namedNode(shapeTreeNode.href), referencesProperty, null, null);
     for (const referenceStatement of referenceStatements) {
-        let referenceResource = new URL(referenceStatement.object.value); // TODO: guard against string or bnode case?
+        let obj = referenceStatement.object;
+        let referenceResource;
+        switch (obj.termType) {
+          case 'BlankNode': referenceResource = obj as BlankNode; break;
+          case 'NamedNode': referenceResource = obj as NamedNode; break;
+          default:
+            throw new ShapeTreeException(500, `Malformed ShapeTree graph has Literal value of <${shapeTreeNode.href}> st:references`);
+        }
         const referencedShapeTreeUrl: URL | null = ShapeTreeFactory.getUrlValue(resourceModel, referenceResource, ShapeTreeVocabulary.REFERENCES_SHAPE_TREE, shapeTreeUrl);
         if (referencedShapeTreeUrl === null) {
             throw new ShapeTreeException(400, "expected <" + shapeTreeUrl + "> reference " + referenceResource.toString() + " to have one <" + ShapeTreeVocabulary.REFERENCES_SHAPE_TREE + "> property");
@@ -117,9 +124,12 @@ export class ShapeTreeFactory {
    * @return URL value linked via <code>predicate</code>
    * @throws ShapeTreeException
    */
-  private static getUrlValue(model: Store, resource: URL, predicate: string, shapeTreeUrl: URL): URL | null /* throws ShapeTreeException */ {
+  private static getUrlValue(model: Store, resource: URL | NamedNode | BlankNode, predicate: string, shapeTreeUrl: URL): URL | null /* throws ShapeTreeException */ {
+    const subject = resource instanceof URL
+        ? DataFactory.namedNode(resource.href)
+        : resource;
     const property: NamedNode = DataFactory.namedNode(predicate);
-    let statements = model.getQuads(DataFactory.namedNode(resource.href), property, null, null);
+    let statements = model.getQuads(subject, property, null, null);
     if (statements.length === 1) {
       const object: Term = statements[0].object;
       if (object.termType === 'NamedNode') {
@@ -143,9 +153,12 @@ export class ShapeTreeFactory {
    * @return String value linked via <code>predicate</code>
    * @throws ShapeTreeException
    */
-  private static getStringValue(model: Store, resource: URL, predicate: string): string | null /* throws ShapeTreeException */ {
+  private static getStringValue(model: Store, resource: URL | NamedNode | BlankNode, predicate: string): string | null /* throws ShapeTreeException */ {
+    const subject = resource instanceof URL
+        ? DataFactory.namedNode(resource.href)
+        : resource;
     const property: NamedNode = DataFactory.namedNode(predicate);
-    let statements = model.getQuads(DataFactory.namedNode(resource.href), property, null, null);
+    let statements = model.getQuads(subject, property, null, null);
     if (statements.length === 1) {
       if (['Literal', 'NamedNode'].indexOf(statements[0].object.termType) !== -1) {
         return statements[0].object.value;
