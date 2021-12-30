@@ -125,7 +125,7 @@ export class ShapeTree {
         const focusNode = focusNodeUrl.href;
         log.debug("Validating Shape Label = %s, Focus Node = %s", shapeLabel, focusNode);
         const res = validator.validate([{node: focusNode, shape: shapeLabel}]);
-        let valid: boolean = 'errors' in res;
+        let valid: boolean = !('errors' in res);
         if (valid) {
           return new ValidationResult(valid, this, this, focusNodeUrl);
         }
@@ -135,10 +135,10 @@ export class ShapeTree {
     } else {
       // No focus nodes were provided for validator, so all subject nodes will be evaluated
       let evaluateNodes: Array<Node> = validationDb.getSubjects(); // graph, Node.ANY, Node.ANY).toList();
-      evaluateNodes.forEach(evaluateNode => {
-        const focusUriString: string = evaluateNode.toString();
+      for (const focusNodeUrl of evaluateNodes) {
+        const focusUriString: string = focusNodeUrl.toString(); // TODO: handle different node types, ald look at objects if static analysis shows focus is value of any inverse property
         const res = validator.validate(focusUriString, shapeLabel);
-        let valid: boolean = 'errors' in res;
+        let valid: boolean = !('errors' in res);
         if (valid) {
           try {
             return new ValidationResult(valid, this, this, new URL(focusUriString));
@@ -146,7 +146,7 @@ export class ShapeTree {
              throw new ShapeTreeException(500, "Error reporting validator success on malformed URL <" + focusUriString + ">: " + ex.message);
            }
         }
-      });
+      };
       return new ValidationResult(false, this, "Failed to validate: " + shapeLabel);
     }
   }

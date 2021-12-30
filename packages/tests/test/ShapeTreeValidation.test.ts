@@ -86,11 +86,14 @@ test("Validate label", async () => {
 // validateShape
 test("Validate shape", async () => {
   let result: ValidationResult;
-  let shapeTree: ShapeTree = await ShapeTreeFactory.getShapeTree(server.urlFor("/static/shapetrees/validation/shapetree#FooTree"));
+
+  const shapeTree: ShapeTree = await ShapeTreeFactory.getShapeTree(server.urlFor("/static/shapetrees/validation/shapetree#FooTree"));
+
   // Validate shape with focus node
-  let focusNodeUrls: Array<URL> = [server.urlFor("/validation/valid-resource#foo")];
+  const focusNodeUrls: Array<URL> = [server.urlFor("/validation/valid-resource#foo")];
   result = await shapeTree.validateResource(null, focusNodeUrls, ShapeTreeResourceType.RESOURCE, await getFooBodyGraph(server.urlFor("/validation/valid-resource")));
   expect(result.isValid()).toEqual(true);
+
   // Validate shape without focus node
   result = await shapeTree.validateResource(null, null, ShapeTreeResourceType.RESOURCE, await getFooBodyGraph(server.urlFor("/validation/valid-resource")));
   expect(result.isValid()).toEqual(true);
@@ -132,7 +135,7 @@ test("Fail shape validation when shape tree doesn't validate a shape", async () 
   // so it should return an error when using to validate
   let noShapeValidationTree: ShapeTree = await ShapeTreeFactory.getShapeTree(server.urlFor("/static/shapetrees/validation/shapetree#NoShapeValidationTree"));
   let graphTtl: string = "<#a> <#b> <#c> .";
-  let focusNodeUrls: Array<URL> = [server.urlFor("http://a.example/b/c.d#a")];
+  let focusNodeUrls: Array<URL> = [new URL("http://a.example/b/c.d#a")];
   const model: Store = await GraphHelper.readStringIntoModel(new URL("http://example.com/"), graphTtl, "text/turtle");
   expect(async () => await noShapeValidationTree.validateGraph(model, focusNodeUrls)).rejects.toBeInstanceOf(ShapeTreeException);
 });

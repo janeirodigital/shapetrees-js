@@ -4,7 +4,7 @@
 
 export enum ShapeTreeResourceType {
 
-  CONTAINER = "http://www.w3.org/ns/shapetrees#CONTAINER", // ShapeTreeVocabulary.CONTAINER,
-  RESOURCE = "http://www.w3.org/ns/shapetrees#RESOURCE", // ShapeTreeVocabulary.RESOURCE,
+  CONTAINER = "http://www.w3.org/ns/shapetrees#Container", // ShapeTreeVocabulary.CONTAINER,
+  RESOURCE = "http://www.w3.org/ns/shapetrees#Resource", // ShapeTreeVocabulary.RESOURCE,
   NON_RDF = "http://www.w3.org/ns/shapetrees#NonRDFResource", // ShapeTreeVocabulary.NON_RDF_RESOURCE,
 }
