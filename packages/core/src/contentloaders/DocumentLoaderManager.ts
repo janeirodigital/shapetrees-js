@@ -10,7 +10,7 @@ import { ExternalDocumentLoader } from './ExternalDocumentLoader';
 export abstract class DocumentLoaderManager {
 
   // @Setter(onMethod_ = { @Synchronized })
-   private static loader: ExternalDocumentLoader;
+   private static loader: ExternalDocumentLoader | null;
 
   // Private constructor to offset an implicit public constructor on a utility class
   private constructor() {
@@ -30,7 +30,7 @@ export abstract class DocumentLoaderManager {
   }
 
   // @Generated
-  public static setLoader(loader: ExternalDocumentLoader): void {
+  public static setLoader(loader: ExternalDocumentLoader | null): void {
     DocumentLoaderManager.loader = loader;
   }
 }

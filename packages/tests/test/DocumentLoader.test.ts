@@ -20,7 +20,6 @@ test("Get document loader", () => {
   DocumentLoaderManager.setLoader(new TestDocumentLoader());
   expect(DocumentLoaderManager.getLoader()).not.toBeNull();
 });
-}
 
 class TestDocumentLoader implements ExternalDocumentLoader {
 
