@@ -147,7 +147,7 @@ export class ShapeTreeFactory {
     const property: NamedNode = DataFactory.namedNode(predicate);
     let statements = model.getQuads(DataFactory.namedNode(resource.href), property, null, null);
     if (statements.length === 1) {
-      if (['literal', 'NamedNode'].indexOf(statements[0].object.termType) !== -1) {
+      if (['Literal', 'NamedNode'].indexOf(statements[0].object.termType) !== -1) {
         return statements[0].object.value;
       } else {
         throw new ShapeTreeException(500, "Cannot determine object type when converting from string for: " + predicate);

@@ -19,5 +19,5 @@ export function ShapeTreeContainsPriority (st1: ShapeTree, st2: ShapeTree): numb
       st2Priority++;
     }
     // Reversed to ensure ordering goes from most strict to least
-    return st1Priority - st2Priority;
+    return st2Priority - st1Priority;
 }

@@ -16,7 +16,7 @@ import {Mockttp, getLocal} from 'mockttp';
 import { DispatchEntryServer } from "./fixtures/DispatchEntryServer";
 const { toUrl } = DispatchEntryServer;
 import {Store} from "n3";
-import {SchemaCacheTests} from "./SchemaCacheTests";
+import {SchemaCacheTests} from "../test/SchemaCache.test";
 
    dispatcher: RequestMatchingFixtureDispatcher = null!; // handled in beforeAll()
 
