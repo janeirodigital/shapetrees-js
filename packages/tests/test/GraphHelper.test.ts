@@ -6,12 +6,12 @@ import { Lang } from '@shapetrees/core/src/todo/Lang'
 import {DataFactory, Store, Triple} from "n3";
 
 // handleNullOrEmptyContentTypes
-test("Handle null or empty content types with defaults", () => {
+test.each([null, ""])("Handle null or empty content types with defaults: %p", (type) => {
   let lang: Lang = GraphHelper.getLangForContentType(type);
   expect(lang).toEqual(Lang.TURTLE);
 });
 // handleTurtleContentType
-test.each(["text/turtle", "something/bogus"])("Handle turtle content type when specified or as default", (type: string) => {
+test.each(["text/turtle", "something/bogus"])("Handle turtle content type when specified or as default: %p", (type: string) => {
   let lang: Lang = GraphHelper.getLangForContentType(type);
   expect(lang).toEqual(Lang.TURTLE);
 });
@@ -42,15 +42,16 @@ test("Parse invalid TTL", () => {
 
 // parseValidTTL
 test("Parse valid TTL", () => {
-  let invalidTtl: string = "<#a> <#b> <#c> .";
-  expect(GraphHelper.readStringIntoModel(new URL("https://example.com/a"), invalidTtl, "text/turtle")).not.toBeNull();
+  let validTtl: string = "<#a> <#b> <#c> .";
+  expect(GraphHelper.readStringIntoModel(new URL("https://example.com/a"), validTtl, "text/turtle")).not.toBeNull();
 });
 
 // writeGraphToTTLString
 test("Write graph to TTL String", () => {
   let graph: Store = new Store;
-  graph.add(DataFactory.triple(DataFactory.namedNode("<#b>"), DataFactory.namedNode("<#c>"), DataFactory.namedNode("<#d>")));
-  expect(GraphHelper.writeGraphToTurtleString(graph)).not.toBeNull();
+  graph.add(DataFactory.triple(DataFactory.namedNode("#b"), DataFactory.namedNode("#c"), DataFactory.namedNode("#d")));
+  const turtleString = GraphHelper.writeGraphToTurtleString(graph);
+  expect(turtleString).not.toBeNull();
 });
 
 // writeNullGraphToTTLString
@@ -59,24 +60,26 @@ test("Write null graph to TTL String", () => {
 });
 
 // writeClosedGraphtoTTLString
+/* doesn't exist in N3.js
 test("Write closed graph to TTL String", () => {
   let graph: Store = new Store();
-  graph.add(DataFactory.triple(DataFactory.namedNode("<#b>"), DataFactory.namedNode("<#c>"), DataFactory.namedNode("<#d>")));
-  // graph.close();
+  graph.add(DataFactory.triple(DataFactory.namedNode("#b"), DataFactory.namedNode("#c"), DataFactory.namedNode("#d")));
+  graph.close();
   expect(GraphHelper.writeGraphToTurtleString(graph)).toBeNull();
 });
+*/
 
 // failToStoreNullTripleStringObjects
-test("Fail to store null string objects in new Triple helper", () => {
-  expect(async () => {
-    await newTriple(new URL("<#b>"), new URL("<#c>"), null);
-  }).rejects.toBeInstanceOf(ShapeTreeException);
-  expect(async () => {
-    await newTriple(new URL("<#b>"), null, new URL("<#d>"));
-  }).rejects.toBeInstanceOf(ShapeTreeException);
-  expect(async () => {
-    await newTriple(null, new URL("<#c>"), new URL("<#d>"));
-  }).rejects.toBeInstanceOf(ShapeTreeException);
+test("Fail to store null string objects in new Triple helper", () => { // TODO: redundant against failToStoreNullTripleURIObjects
+  expect(() => {
+    newTriple(new URL("http://a.example/#b"), new URL("http://a.example/#c"), null!);
+  }).toThrow(/Cannot provide null values as input to triple construction/);
+  expect(() => {
+    newTriple(new URL("http://a.example/#b"), null!, new URL("http://a.example/#d"));
+  }).toThrow(/Cannot provide null values as input to triple construction/);
+  expect(() => {
+    newTriple(null!, new URL("http://a.example/#c"), new URL("http://a.example/#d"));
+  }).toThrow(/Cannot provide null values as input to triple construction/);
 });
 
 // failToStoreNullTripleURIObjects
@@ -84,15 +87,15 @@ test("Fail to store null URI objects in new Triple helper", () => {
   let subjectURI: URL = new URL("https://site.example/#a");
   let predicateURI: URL = new URL("https://site.example/#b");
   let objectURI: URL = new URL("https://site.example/#c");
-  expect(async () => {
-    await newTriple(subjectURI, predicateURI, null);
-  }).rejects.toBeInstanceOf(ShapeTreeException);
-  expect(async () => {
-    await newTriple(subjectURI, null, objectURI);
-  }).rejects.toBeInstanceOf(ShapeTreeException);
-  expect(async () => {
-    await newTriple(null, predicateURI, objectURI);
-  }).rejects.toBeInstanceOf(ShapeTreeException);
+  expect(() => {
+    newTriple(subjectURI, predicateURI, null!);
+  }).toThrow(/Cannot provide null values as input to triple construction/);
+  expect(() => {
+    newTriple(subjectURI, null!, objectURI);
+  }).toThrow(/Cannot provide null values as input to triple construction/);
+  expect( () => {
+    newTriple(null!, predicateURI, objectURI);
+  }).toThrow(/Cannot provide null values as input to triple construction/);
 });
 
 // storeURISubjectAndPredicate
@@ -120,7 +123,7 @@ test("Store String object with new Triple helper", () => {
 
 // storeDateTimeAsTripleObject
 test("Store DateTime object with new Triple helper", () => {
-  let uriTriple: Triple = newTriple(new URL("https://site.example/#a"), new URL("https://site.example/#b"), OffsetDateTime.now());
+  let uriTriple: Triple = newTriple(new URL("https://site.example/#a"), new URL("https://site.example/#b"), new Date().toISOString());
   expect(uriTriple).not.toBeNull();
   expect(uriTriple.object.termType).toEqual('Literal');
 });
@@ -134,7 +137,7 @@ test("Store Boolean object with new Triple helper", () => {
 
 // storeBlankNodeAsTripleObject
 test("Store Blank Node with new Triple helper", () => {
-  let uriTriple: Triple = newTriple(new URL("https://site.example/#a"), new URL("https://site.example/#b"), "_:b1");
+  let uriTriple: Triple = newTriple(new URL("https://site.example/#a"), new URL("https://site.example/#b"), DataFactory.blankNode());
   expect(uriTriple).not.toBeNull();
   expect(uriTriple.object.termType).toEqual('BlankNode');
 });
@@ -142,6 +145,6 @@ test("Store Blank Node with new Triple helper", () => {
 // failedToStoreUnsupportedTypeAsTripleObject
 test("Fail to store Unsupported Type with new Triple helper", () => {
   expect(async () => {
-    await newTriple(new URL("https://site.example/#a"), new URL("https://site.example/#b"), 35.6);
+    await newTriple(new URL("https://site.example/#a"), new URL("https://site.example/#b"), 35.6 as unknown as boolean);
   }).rejects.toBeInstanceOf(ShapeTreeException);
 });

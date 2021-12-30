@@ -1,5 +1,6 @@
 // Corresponding shapetrees-java package: com.janeirodigital.shapetrees.core.helpers
 import {BlankNode, DataFactory, Literal, NamedNode, Parser, Quad, Store, Triple, Writer} from 'n3';
+import { Namespaces } from "../vocabularies/Namespaces";
 // import {URL} from 'url';
 import {ShapeTreeException} from '../exceptions/ShapeTreeException';
 import {Lang} from '../todo/Lang';
@@ -19,7 +20,7 @@ export class GraphHelper {
    * @param contentType Content type string
    * @return Serialization language
    */
-  public static getLangForContentType(contentType: string): Lang {
+  public static getLangForContentType(contentType: string | null): Lang {
     // !! Optional<String>
     if (contentType === null) {
       return Lang.TURTLE;
@@ -74,9 +75,13 @@ export class GraphHelper {
         const p = new Parser({ baseIRI: baseURI.href });
         return new Promise((resolve, reject) => {
           p.parse(rawContent, (error: Error, quad: Quad, prefixes: object) => {
-            if (error) reject(error);
-            else if (quad) ret.addQuad(quad);
-            else resolve(ret);
+            if (error) {
+              reject(new ShapeTreeException(422, `Error processing input - ${(<Error>error).message}`));
+            } else if (quad) {
+              ret.addQuad(quad);
+            } else {
+              resolve(ret);
+            }
           });
         });
       } else {
@@ -107,18 +112,21 @@ export class GraphHelper {
    * @param object Object to include
    * @return
    */
-  public static newTriple(subject: URL, predicate: URL, object: URL | string | LdLiteral): Triple /* throws ShapeTreeException */ {
-    if (subject === undefined || predicate === undefined || object === undefined) {
+  public static newTriple(subject: URL, predicate: URL, object: URL | string | LdLiteral | Date | boolean | BlankNode): Triple /* throws ShapeTreeException */ {
+    if (subject === null || predicate === null || object === null) {
       throw new ShapeTreeException(500, "Cannot provide null values as input to triple construction");
     }
-    let objectNode: NamedNode | BlankNode | Literal | null= null;
-    if (object instanceof URL) {
-      // TODO: needed?
+    let objectNode: NamedNode | BlankNode | Literal | null = null;
+    if (object instanceof URL) { // TODO: needed?
       objectNode = DataFactory.namedNode(object.href);
     } else if (typeof object === 'string') {
-      objectNode = DataFactory.blankNode(object);
-    } else if (typeof object === 'object') {
-      objectNode = object.toLiteral();
+      objectNode = DataFactory.literal(object);
+    } else if (object instanceof Date) {
+      objectNode = DataFactory.literal(object.toISOString(), new NamedNode(Namespaces.XSD + 'dateTime'));
+    } else if (typeof object === 'boolean') {
+      objectNode = DataFactory.literal(object.toString(), new NamedNode(Namespaces.XSD + 'boolean'));
+    } else if (object instanceof BlankNode) {
+      objectNode = object;
     } else {
       throw new ShapeTreeException(500, "Unsupported object value in triple construction: " + JSON.stringify(object));
     }
