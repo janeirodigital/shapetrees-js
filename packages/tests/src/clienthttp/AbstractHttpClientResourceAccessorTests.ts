@@ -9,9 +9,7 @@ import { AbstractResourceAccessorTests } from '../AbstractResourceAccessorTests'
 export class AbstractHttpClientResourceAccessorTests extends AbstractResourceAccessorTests {
 
    protected httpResourceAccessor: HttpResourceAccessor = null!; // handled in beforeAll
-
    protected fetcher: HttpClient = null!; // handled in beforeAll
-
    protected factory: HttpClientFactory = null!; // handled in beforeAll
 
   public constructor() {
@@ -23,9 +21,11 @@ export class AbstractHttpClientResourceAccessorTests extends AbstractResourceAcc
     try {
       this.fetcher = this.factory.get(!b);
     } catch (e) {
- if (e instanceof ShapeTreeException) {
-      throw new Error(e);
+      if (e instanceof ShapeTreeException) {
+        throw new Error('skipShapeTreeValidation ShapeTreeException ' + e);
+      } else {
+        throw e;
+      }
     }
-}
-  }
+ }
 }

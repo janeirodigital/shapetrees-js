@@ -117,7 +117,7 @@ export class HttpClientCrossFetchValidatingInterceptor {
       this.resourceType = null;
       const tm = new HeadersMultiMap();
       this.request.headers.forEach((value, key) => {
-          tm.replace(key, value);
+          tm.setCommaSeparated(key, value);
       });
       this.headers = new ResourceAttributes(tm);
     }

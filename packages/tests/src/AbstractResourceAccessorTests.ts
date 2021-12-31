@@ -2,12 +2,14 @@
 import { ShapeTreeException } from '@shapetrees/core/src/exceptions/ShapeTreeException';
 import { ShapeTreeContext } from '@shapetrees/core/src/ShapeTreeContext';
 import { ShapeTreeManager } from '@shapetrees/core/src/ShapeTreeManager';
+import { DocumentLoaderManager } from '@shapetrees/core/src/contentloaders/DocumentLoaderManager';
+import { HttpExternalDocumentLoader } from '@shapetrees/core/src/contentloaders/HttpExternalDocumentLoader';
 import { DispatcherEntry } from './fixtures/DispatcherEntry';
 import { RequestMatchingFixtureDispatcher } from './fixtures/RequestMatchingFixtureDispatcher';
-import { DocumentResponse } from "../../core/src/DocumentResponse";
-import { InstanceResource } from "../../core/src/InstanceResource";
-import { ResourceAccessor } from "../../core/src/ResourceAccessor";
-import { ResourceAttributes } from "../../core/src/ResourceAttributes";
+import { DocumentResponse } from "@shapetrees/core/src/DocumentResponse";
+import { InstanceResource } from "@shapetrees/core/src/InstanceResource";
+import { ResourceAccessor } from "@shapetrees/core/src/ResourceAccessor";
+import { ResourceAttributes } from "@shapetrees/core/src/ResourceAttributes";
 import { ManageableInstance } from '@shapetrees/core/src/ManageableInstance'
 import { MissingManageableResource } from '@shapetrees/core/src/MissingManageableResource'
 import { MissingManagerResource } from '@shapetrees/core/src/MissingManagerResource'
@@ -15,41 +17,51 @@ import { ManagedResource } from '@shapetrees/core/src/ManagedResource'
 import { UnmanagedResource } from '@shapetrees/core/src/UnmanagedResource'
 import { ManagerResource } from '@shapetrees/core/src/ManagerResource'
 import { ManageableResource } from '@shapetrees/core/src/ManageableResource'
-import {Mockttp, getLocal} from "mockttp";
+import { DispatchEntryServer } from './fixtures/DispatchEntryServer';
 
-resourceAccessor: ResourceAccessor = null;
-context: ShapeTreeContext;
+export class AbstractResourceAccessorTests {
 
-const httpExternalDocumentLoader = new HttpExternalDocumentLoader();
-DocumentLoaderManager.setLoader(httpExternalDocumentLoader);
+  protected resourceAccessor: ResourceAccessor = null!;
+  protected server = new DispatchEntryServer();
+  protected context = new ShapeTreeContext(null);
 
-const server = new DispatchEntryServer();
-const dispatcher = new RequestMatchingFixtureDispatcher([
+  dispatcher = new RequestMatchingFixtureDispatcher([
   new DispatcherEntry(["resourceAccessor/resource-no-link-headers"], "GET", "/static/resource/resource-no-link-headers", null),
   new DispatcherEntry(["resourceAccessor/resource-empty-link-header"], "GET", "/static/resource/resource-empty-link-header", null),
+  new DispatcherEntry(["http/404"], "GET", "/static/resource/not-existing-no-slash", null),
+  new DispatcherEntry(["http/404"], "GET", "/static/resource/not-existing-slash/", null),
   new DispatcherEntry(["resourceAccessor/resource-container-link-header"], "GET", "/static/resource/resource-container-link-header", null),
   new DispatcherEntry(["resourceAccessor/resource-container-link-header"], "GET", "/static/resource/resource-container-link-header/", null),
+  new DispatcherEntry(["http/404"], "PUT", "/static/resource/resource-container-link-header/", null),
   new DispatcherEntry(["resourceAccessor/resource-container-invalid-link-header"], "GET", "/static/resource/resource-container-invalid-link-header/", null),
   new DispatcherEntry(["resourceAccessor/managed-container-1"], "GET", "/static/resource/managed-container-1/", null),
   new DispatcherEntry(["resourceAccessor/managed-resource-1-create"], "PUT", "/static/resource/managed-container-1/managed-resource-1/", null),
   new DispatcherEntry(["resourceAccessor/managed-resource-1-manager"], "GET", "/static/resource/managed-container-1/managed-resource-1/.shapetree", null),
   new DispatcherEntry(["resourceAccessor/managed-container-1-manager"], "GET", "/static/resource/managed-container-1/.shapetree", null),
   new DispatcherEntry(["resourceAccessor/unmanaged-container-2"], "GET", "/static/resource/unmanaged-container-2/", null),
+  new DispatcherEntry(["http/201"], "PUT", "/static/resource/unmanaged-container-2/", null),
+  new DispatcherEntry(["http/404"], "GET", "/static/resource/unmanaged-container-2/.shapetree", null),
   new DispatcherEntry(["resourceAccessor/managed-container-2"], "GET", "/static/resource/managed-container-2/", null),
   new DispatcherEntry(["resourceAccessor/unmanaged-resource-1-create"], "PUT", "/static/resource/unmanaged-resource-1", null),
+  new DispatcherEntry(["errors/404"], "GET", "/static/resource/unmanaged-resource-1.shapetree", null),
+  new DispatcherEntry(["errors/404"], "GET", "/static/resource/managed-container-2/.shapetree", null),
   new DispatcherEntry(["resourceAccessor/managed-container-2-manager-create"], "PUT", "/static/resource/managed-container-2/.shapetree", null),
+  new DispatcherEntry(["errors/404"], "GET", "/static/resource/missing-resource-1", null),
   new DispatcherEntry(["errors/404"], "GET", "/static/resource/missing-resource-1.shapetree", null),
   new DispatcherEntry(["errors/404"], "GET", "/static/resource/missing-resource-2", null),
   new DispatcherEntry(["resourceAccessor/missing-resource-2-manager-create"], "PUT", "/static/resource/missing-resource-2.shapetree", null),
   new DispatcherEntry(["shapetrees/project-shapetree-ttl"], "GET", "/static/shapetrees/project/shapetree", null),
   new DispatcherEntry(["schemas/project-shex"], "GET", "/static/shex/project/shex", null),
   new DispatcherEntry(["errors/404"], "GET", "/static/resource/notpresent", null)
-]);
+  ]);
 
-beforeAll(() => { return server.start(dispatcher); });
-afterAll(() => { return server.stop(); });
+  httpExternalDocumentLoader: HttpExternalDocumentLoader = new HttpExternalDocumentLoader();
+  AbstractResourceAccessorTests () {
+    DocumentLoaderManager.setLoader(this.httpExternalDocumentLoader);
+  }
 
-this.context = new ShapeTreeContext(null);
+  runTests () {
+    describe("from root", () => {
 
 // Tests to Get ManageableInstances
 // getInstanceFromMissingResource
@@ -74,7 +86,7 @@ test("Get instance from managed resource", async () => {
   expect(instance.isManaged()).toEqual(true);
   expect(instance.isUnmanaged()).toEqual(false);
   let managerResource: ManagerResource = instance.getManagerResource();
-  let manager: ShapeTreeManager = await managerResource.getManager();
+  let manager: ShapeTreeManager = (await managerResource.getManager())!;
   expect(1).toEqual(manager.getAssignments().length);
 });
 
@@ -122,14 +134,14 @@ test("Get instance from unmanaged resource from manager request", async () => {
 // createInstanceFromManagedResource
 test("Create instance from managed resource", async () => {
   let headers: ResourceAttributes = new ResourceAttributes();
-  let instance: ManageableInstance = await this.resourceAccessor.createInstance(this.context, "PUT", this.server.urlFor("/static/resource/managed-container-1/managed-resource-1/"), headers, this.getMilestoneThreeBodyGraph(), "text/turtle");
+  let instance: ManageableInstance = await this.resourceAccessor.createInstance(this.context, "PUT", this.server.urlFor("/static/resource/managed-container-1/managed-resource-1/"), headers, AbstractResourceAccessorTests.getMilestoneThreeBodyGraph(), "text/turtle");
   expect(instance.isManaged()).toEqual(true);
   expect(instance.getManageableResource() instanceof ManagedResource).toEqual(true);
   expect(instance.getManageableResource() instanceof MissingManageableResource).toEqual(false);
   expect(instance.getManagerResource().isExists()).toEqual(true);
   expect(instance.getManagerResource().getManagedResourceUrl()).toEqual(instance.getManageableResource().getUrl());
   let managerResource: ManagerResource = instance.getManagerResource();
-  let manager: ShapeTreeManager = await managerResource.getManager();
+  let manager: ShapeTreeManager = (await managerResource.getManager())!;
   expect(1).toEqual(manager.getAssignments().length);
 });
 
@@ -156,7 +168,7 @@ test("Fail to create instance from existing manageable resource", async () => {
 test("Create instance from manager resource", async () => {
   // Create a new manager and store in instance and load the managed resource and store in instance (possibly just pre-fetch metadata if lazily loading)
   let headers: ResourceAttributes = new ResourceAttributes();
-  let instance: ManageableInstance = await this.resourceAccessor.createInstance(this.context, "PUT", this.server.urlFor("/static/resource/managed-container-2/.shapetree"), headers, this.getProjectTwoManagerGraph(), "text/turtle");
+  let instance: ManageableInstance = await this.resourceAccessor.createInstance(this.context, "PUT", this.server.urlFor("/static/resource/managed-container-2/.shapetree"), headers, AbstractResourceAccessorTests.getProjectTwoManagerGraph(), "text/turtle");
   expect(instance.isManaged()).toEqual(true);
   expect(instance.getManageableResource() instanceof ManagedResource).toEqual(true);
   expect(instance.getManagerResource() instanceof MissingManagerResource).toEqual(false);
@@ -167,7 +179,7 @@ test("Create instance from manager resource", async () => {
 test("Fail to create instance from isolated manager resource", async () => {
   let headers: ResourceAttributes = new ResourceAttributes();
   await expect(async () => {
-    let instance: ManageableInstance = await this.resourceAccessor.createInstance(this.context, "PUT", this.server.urlFor("/static/resource/missing-resource-2.shapetree"), headers, this.getProjectTwoManagerGraph(), "text/turtle");
+    let instance: ManageableInstance = await this.resourceAccessor.createInstance(this.context, "PUT", this.server.urlFor("/static/resource/missing-resource-2.shapetree"), headers, AbstractResourceAccessorTests.getProjectTwoManagerGraph(), "text/turtle");
   }).rejects.toBeInstanceOf(ShapeTreeException);
 });
 
@@ -188,12 +200,15 @@ test("Get a resource with an empty link header", async () => {
   expect((<ManageableResource>resource).getManagerResourceUrl() === null).toEqual(true);
 });
 
-// failToAccessResourceWithInvalidUrlString
-test("Fail to get a resource with an invalid URL string", async () => {
-  // TODO: Test: may as well deleted as it's only testing URL.create()
-  await expect(async () => await this.resourceAccessor.getResource(this.context, new URL(":invalid"))).rejects.toBeInstanceOf(MalformedURLException);
-  // TODO - this should also test create, update, delete, getContained, (also get/create instance)
-});
+// // failToAccessResourceWithInvalidUrlString
+// test("Fail to get a resource with an invalid URL string", async () => {
+//   // TODO: Test: may as well deleted as it's only testing URL.create()
+//   // Expected constructor: Error
+//   // Received constructor: NodeError
+//   // TODO: can't import anything from (@types/) node/globals 'cause it's not a module
+//   await expect(async () => await this.resourceAccessor.getResource(this.context, new URL(":invalid"))).rejects.toBeInstanceOf(NodeJS.ErrnoException);
+//   // TODO - this should also test create, update, delete, getContained, (also get/create instance)
+// });
 
 // getMissingResourceWithNoSlash
 test("Get a missing resource with no slash", async () => {
@@ -258,11 +273,13 @@ test("Fail to update resource", async () => {
   // Succeed in getting a resource
   let resource: InstanceResource = await this.resourceAccessor.getResource(this.context, this.server.urlFor("/static/resource/resource-container-link-header/"));
   // Fail to update it
-  let response: DocumentResponse = await this.resourceAccessor.updateResource(this.context, "PUT", resource, "BODY");
+  let response: DocumentResponse = await this.resourceAccessor.updateResource(this.context, "PUT", resource, "BODY"); // TODO: was a 404. maybe 401|403?
   expect(response.isExists()).toEqual(false);
 });
+    });
+  }
 
-private getMilestoneThreeBodyGraph(): string {
+private static getMilestoneThreeBodyGraph(): string {
   return "PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> \n" +
     "PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#> \n" +
     "PREFIX xml: <http://www.w3.org/XML/1998/namespace> \n" +
@@ -279,7 +296,7 @@ private getMilestoneThreeBodyGraph(): string {
     "    ex:inProject </static/resource/managed-container-1/#project> . \n";
 }
 
-private getProjectTwoManagerGraph(): string {
+private static getProjectTwoManagerGraph(): string {
   return "PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> \n" +
     "PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#> \n" +
     "PREFIX xml: <http://www.w3.org/XML/1998/namespace> \n" +
@@ -296,4 +313,5 @@ private getProjectTwoManagerGraph(): string {
     "    st:hasRootAssignment <#ln1> ; \n" +
     "    st:focusNode </static/resource/managed-container-2/#project> ; \n" +
     "    st:shape <${SERVER_BASE}/static/shex/project/shex#ProjectShape> . \n";
+}
 }

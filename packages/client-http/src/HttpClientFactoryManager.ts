@@ -18,4 +18,11 @@ export abstract class HttpClientFactoryManager {
     }
     return HttpClientFactoryManager.factory;
   }
+
+  public static setFactory(factory: HttpClientFactory): void /* throws ShapeTreeException */ {
+    if (factory === null) {
+      throw new ShapeTreeException(500, "Must provide a valid HTTP client factory");
+    }
+    HttpClientFactoryManager.factory = factory;
+  }
 }

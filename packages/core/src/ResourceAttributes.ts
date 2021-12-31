@@ -69,7 +69,7 @@ export class ResourceAttributes {
         }
         linkHeaderMap.myMapOfLists.get(rel)!.push(uri);
       } else {
-        log.warn("Unable to parse link header: [%s]", headerValue);
+        log.warn("Unable to parse link header: [%s]", headerValue); // TODO: I think think this should throw (ericP).
       }
     }
     return linkHeaderMap;
@@ -195,5 +195,5 @@ export class ResourceAttributes {
     return sb.toString();
   }
 
-  private static readonly LINK_HEADER_PATTERN: RegExp = new RegExp('^<(.*?)>\\s*;\\s*rel\\s*="(.*?)"\\s*');
+  private static readonly LINK_HEADER_PATTERN: RegExp = new RegExp('^ *<(.*?)>\\s*;\\s*rel\\s*="(.*?)"\\s*');
 }

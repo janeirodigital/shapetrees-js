@@ -1,9 +1,10 @@
 {
-  "name": "tests",
-  "version": "1.0.0",
+  "name": "@shapetrees/tests",
+  "version": "0.0.1",
   "description": "Test suite for ShapeTress",
   "main": "dist/index.js",
   "scripts": {
+    "build": "tsc",
     "debug": "ts-node bin/harness.ts",
     "test": "NODE_OPTIONS=--trace-warnings\\ --unhandled-rejections=strict ts-node bin/harness.ts"
   },
@@ -13,6 +14,7 @@
   },
   "keywords": [
     "solid",
+    "shapes",
     "shapetrees",
     "rdf"
   ],
@@ -23,8 +25,6 @@
   },
   "homepage": "https://github.com/janeirodigital/shapetrees-js#readme",
   "dependencies": {
-    "@types/jest": "^27.0.3",
-    "@types/js-yaml": "^4.0.5",
     "cross-fetch": "^3.1.4",
     "jest": "^27.4.5",
     "js-yaml": "^4.1.0",
@@ -33,6 +33,8 @@
     "ts-node": "^10.4.0"
   },
   "devDependencies": {
+    "@types/jest": "^27.0.3",
+    "@types/js-yaml": "^4.0.5",
     "typescript": "^4.5.3"
   }
 }

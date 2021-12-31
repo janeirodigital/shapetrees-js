@@ -18,7 +18,7 @@ export class DocumentResponse {
 
   // TODO: lots of choices re non-404, not >= 4xx, not 3xx. not 201 (meaning there's no body)
   public isExists(): boolean {
-    return this.statusCode / 100 === 2;
+    return Math.floor(this.statusCode / 100) === 2;
   }
 
   public constructor(resourceAttributes: ResourceAttributes | null, body: string | null, statusCode: number) {

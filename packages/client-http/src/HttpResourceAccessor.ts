@@ -49,7 +49,9 @@ export class HttpResourceAccessor implements ResourceAccessor {
    * @return {@link ManageableInstance} including {@link ManageableResource} and {@link ManagerResource}
    */
   public async getInstance(context: ShapeTreeContext, resourceUrl: URL): Promise<ManageableInstance> /* throws ShapeTreeException */ {
-    let resource: InstanceResource = await this.getResource(context, resourceUrl);
+
+    const resource: InstanceResource = await this.getResource(context, resourceUrl);
+
     if (resource instanceof MissingManageableResource) {
       // Get is for a manageable resource that doesn't exist
       return this.getInstanceFromMissingManageableResource(context, <MissingManageableResource>resource);
@@ -63,6 +65,7 @@ export class HttpResourceAccessor implements ResourceAccessor {
       // Get is for an existing manager resource
       return this.getInstanceFromManagerResource(context, <ManagerResource>resource);
     }
+
     throw new ShapeTreeException(500, "Can get instance from resource of unsupported type: " + resource.getUrl());
   }
 
@@ -269,6 +272,7 @@ export class HttpResourceAccessor implements ResourceAccessor {
    * @throws ShapeTreeException
    */
   private generateResource(url: URL, response: DocumentResponse): InstanceResource /* throws ShapeTreeException */ {
+
     // If a resource was created, ensure the URL returned in the Location header is valid
     let location: string | null = response.getResourceAttributes() === null
         ? null
@@ -280,6 +284,7 @@ export class HttpResourceAccessor implements ResourceAccessor {
          throw new ShapeTreeException(500, "Retrieving <" + url + "> yielded a Location header \"" + location + "\" which doesn't parse as a URL: " + ex.message);
        }
     }
+
     // Determine whether the resource exists based on the response. Even if the resource
     // doesn't exist, additional context and processing is done to provide the appropriate
     // typed resource with adequate context to the caller
@@ -287,18 +292,23 @@ export class HttpResourceAccessor implements ResourceAccessor {
     const container: boolean = this.isContainerFromHeaders(response.getResourceAttributes(), url);
     const attributes: ResourceAttributes = response.getResourceAttributes() || new ResourceAttributes(); // TODO: could be null
     const resourceType: ShapeTreeResourceType = this.getResourceTypeFromHeaders(response.getResourceAttributes())!; // TODO: could be null
+
     const name: string = this.calculateName(url);
     if (response.getBody() === null) {
       log.error("Could not retrieve the body string from response for " + url);
       throw new Error("Could not retrieve the body string from response for <" + url + ">"); // TODO: follow resolution in /home/eric/checkouts/janeirodigital/shapetrees-java/shapetrees-java-client-http/src/main/java/com/janeirodigital/shapetrees/client/http/HttpResourceAccessor.java
     }
     const body: string = response.getBody()!;
+
     // Parse Link headers from response and populate ResourceAttributes
     const linkHeaders: Array<string> = attributes.allValues(HttpHeaders.LINK);
-    let parsedLinkHeaders: ResourceAttributes = // !!
-    linkHeaders === null ? new ResourceAttributes() : ResourceAttributes.parseLinkHeaders(linkHeaders);
+    let parsedLinkHeaders: ResourceAttributes = linkHeaders === null
+        ? new ResourceAttributes()
+        : ResourceAttributes.parseLinkHeaders(linkHeaders);
+
     // Determine if the resource is a shape tree manager based on the response
     const isManager: boolean = this.calculateIsManager(url, exists, parsedLinkHeaders);
+
     if (isManager) {
       const managedResourceUrl: URL = this.calculateManagedUrl(url, parsedLinkHeaders);
       if (exists) {
@@ -397,10 +407,10 @@ export class HttpResourceAccessor implements ResourceAccessor {
    * @return True if headers indicating a container are found
    */
   private isContainerFromHeaders(headers: ResourceAttributes | null, url: URL): boolean {
-    let linkHeaders: Array<string> = headers
+    let linkHeaders: Array<string> = headers == null
         ? []
         : headers!.allValues(HttpHeaders.LINK);
-    if (linkHeaders === null) {
+    if (linkHeaders.length === 0) {
       return url.pathname.endsWith("/");
     }
     let parsedLinkHeaders: ResourceAttributes = ResourceAttributes.parseLinkHeaders(linkHeaders);
@@ -456,7 +466,7 @@ export class HttpResourceAccessor implements ResourceAccessor {
     }
     let managerUrlString: string = optManagerString;
     try {
-      return new URL(url.href, managerUrlString);
+      return new URL(managerUrlString, url);
     } catch (ex: any) {
        throw new ShapeTreeException(500, "Malformed relative URL <" + managerUrlString + "> (resolved from <" + url + ">)");
      }
@@ -481,10 +491,10 @@ export class HttpResourceAccessor implements ResourceAccessor {
       // Attempt to (crudely) infer based on path calculation
       // If this implementation uses a dot notation for meta, trim it from the path
       // Rebuild without the query string in case that was employed
-      managedUrlString = managerUrl.pathname.replace("\\.shapetree$", "");
+      managedUrlString = managerUrl.pathname.replace(".shapetree", "");
     }
     try {
-      managedResourceUrl = new URL(managerUrl.href, managedUrlString);
+      managedResourceUrl = new URL(managedUrlString, managerUrl);
     } catch (ex) {
        throw new ShapeTreeException(500, "Can't calculate managed resource for shape tree manager <" + managerUrl + ">");
      }

@@ -11,9 +11,9 @@
     "packages/core",
     "packages/client-core",
     "packages/client-http",
+    "packages/tests",
     "packages/http-client-cross-fetch",
-    "packages/http-client-node-fetch",
-    "packages/tests"
+    "packages/http-client-node-fetch"
   ],
   "devDependencies": {
     "@types/n3": "^1.10.4",

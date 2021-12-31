@@ -16,10 +16,10 @@ import * as log from 'loglevel';
  */
 export class HttpClientCrossFetch implements HttpClient {
 
-   private validatingWrapper: HttpClientCrossFetchValidatingInterceptor | null;
-   private agent: Agent = new https.Agent({
-       rejectUnauthorized: true,
-   });
+  private validatingWrapper: HttpClientCrossFetchValidatingInterceptor | null;
+  private agent: Agent = new https.Agent({
+    rejectUnauthorized: true,
+  });
 
   /**
    * Execute an HTTP request to create a DocumentResponse object
@@ -35,32 +35,30 @@ export class HttpClientCrossFetch implements HttpClient {
         headers.append(key, value);
       }
     }
+
     const resp = await fetch(request.resourceURL.href, {
-        method: request.method,
-        body: request.body,
-        headers: headers, // TODO: unsure if a list is allowed
+      method: request.method,
+      body: request.body,
+      headers: headers, // TODO: unsure if a list is allowed
     });
+
     let body: string | null = null;
     try {
       body = await resp.text();
     } catch (ex: any) {
-       log.error("Exception retrieving body string");
+      log.error("Exception retrieving body string");
     }
-    const attrs = new ResourceAttributes();
-    for (let key in resp.headers) {
-      if (HeadersMultiMap.CommaSeparatedHeaders.indexOf(key.toLowerCase()) !== -1) {
-          const values: string[] = resp.headers.get(key)!.split(/,/);
-          attrs.setAll(key, values);
-      } else {
-          attrs.setAll(key, [resp.headers.get(key)!]);
-      }
+
+    const attrs = new HeadersMultiMap();
+    for (const [key, value] of resp.headers.entries()) {
+      attrs.setCommaSeparated(key, value);
     }
-    return new DocumentResponse(attrs, body, resp.status);
+    return new DocumentResponse(new ResourceAttributes(attrs), body, resp.status);
   }
 
   static ListHeaders = ['link'];
 
-    /**
+  /**
    * Construct an HttpClientCrossFetch with switches to enable or disable SSL and ShapeTree validation
    * @param useSslValidation
    * @param useShapeTreeValidation
@@ -74,7 +72,7 @@ export class HttpClientCrossFetch implements HttpClient {
     }
     if (!useSslValidation) {
       this.agent = new https.Agent({
-          rejectUnauthorized: false,
+        rejectUnauthorized: false,
       })
     }
   }
@@ -147,9 +145,9 @@ export class HttpClientCrossFetch implements HttpClient {
       }
     } catch (ex: any) {
       if (typeof ex === "object" &&
-          ex instanceof TypeError &&
-          // @ts-ignore
-          ex.code === "ERR_INVALID_URL") { // tsc says TypeError has no `code`, but empirically, these do: `try {new URL("@#$");} catch(ex) { console.log(ex instanceof TypeError && ex.code === "ERR_INVALID_URL"); }`
+        ex instanceof TypeError &&
+        // @ts-ignore
+        ex.code === "ERR_INVALID_URL") { // tsc says TypeError has no `code`, but empirically, these do: `try {new URL("@#$");} catch(ex) { console.log(ex instanceof TypeError && ex.code === "ERR_INVALID_URL"); }`
         throw new ShapeTreeException(500, "Malformed URL <" + request.resourceURL + ">: " + ex.message);
       }
       throw new ShapeTreeException(500, ex.message);
