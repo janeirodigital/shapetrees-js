@@ -13,10 +13,9 @@ import { ValidatingPutMethodHandler } from '@shapetrees/core/src/methodhandlers/
 import { ValidatingPatchMethodHandler } from '@shapetrees/core/src/methodhandlers/ValidatingPatchMethodHandler';
 import { ValidatingPostMethodHandler } from '@shapetrees/core/src/methodhandlers/ValidatingPostMethodHandler';
 import { HeadersMultiMap } from '@shapetrees/core/src/todo/HeadersMultiMap';
-import fetch from 'cross-fetch';
-import { Headers, Request, Response } from 'cross-fetch';
+import fetch, { Headers, Request, Response } from 'node-fetch';
 import * as log from 'loglevel';
-import {HttpClientNodeFetch} from "./HttpClientNodeFetch";
+import { HttpClientNodeFetch } from "./HttpClientNodeFetch";
 
 /**
  * Wrapper used for client-side validation
@@ -32,26 +31,30 @@ export class HttpClientNodeFetchValidatingInterceptor {
     private static readonly DELETE: string = "DELETE";
 
     // @NotNull
-    public async validatingWrap(fetchRequest: Request, body: string | null, contentType: string | null): Promise<Response> /* throws IOException, InterruptedException */ {
-        let shapeTreeRequest: ShapeTreeRequest = new JsHttpShapeTreeRequest(fetchRequest, body!, contentType!); // TODO: could be null
+    public async validatingWrap(input: Request | string, init?: RequestInit | undefined): Promise<Response> /* throws IOException, InterruptedException */ {
+        const fetchRequest = input instanceof Request
+            ? input
+            : new Request(input, init);
+        const body: string | null = fetchRequest.body ? await fetchRequest.text() : null;
+        let shapeTreeRequest: ShapeTreeRequest = new JsHttpShapeTreeRequest(fetchRequest, body, fetchRequest.headers.get(HttpHeaders.CONTENT_TYPE));
         let resourceAccessor: ResourceAccessor = new HttpResourceAccessor();
         // Get the handler
-        let handler: ValidatingMethodHandler | null = this.getHandler(shapeTreeRequest.getMethod(), resourceAccessor);
+        let handler: ValidatingMethodHandler | null = HttpClientNodeFetchValidatingInterceptor.getHandler(shapeTreeRequest.getMethod(), resourceAccessor);
         if (handler != null) {
             try {
                 let shapeTreeResponse: DocumentResponse | null = await handler.validateRequest(shapeTreeRequest);
                 if (shapeTreeResponse === null) {
                     return HttpClientNodeFetch.check(await fetch(fetchRequest));
                 } else {
-                    return this.createResponse(fetchRequest, shapeTreeResponse);
+                    return HttpClientNodeFetchValidatingInterceptor.createResponse(shapeTreeResponse);
                 }
             } catch (ex: any) {
                 if (ex instanceof ShapeTreeException) {
                     log.error("Error processing shape tree request: ", ex);
-                    return this.createErrorResponse(ex, fetchRequest);
+                    return HttpClientNodeFetchValidatingInterceptor.createErrorResponse(ex);
                 } else {
                     log.error("Error processing shape tree request: ", ex);
-                    return this.createErrorResponse(new ShapeTreeException(500, ex.message), fetchRequest);
+                    return HttpClientNodeFetchValidatingInterceptor.createErrorResponse(new ShapeTreeException(500, ex.message));
                 }
             }
         } else {
@@ -60,7 +63,7 @@ export class HttpClientNodeFetchValidatingInterceptor {
         }
     }
 
-    private getHandler(requestMethod: string, resourceAccessor: ResourceAccessor): ValidatingMethodHandler | null {
+    private static getHandler(requestMethod: string, resourceAccessor: ResourceAccessor): ValidatingMethodHandler | null {
         switch (requestMethod) {
             case "POST":
                 return new ValidatingPostMethodHandler(resourceAccessor);
@@ -75,18 +78,17 @@ export class HttpClientNodeFetchValidatingInterceptor {
         }
     }
 
-    private createErrorResponse(exception: ShapeTreeException, nativeRequest: Request): Response {
+    private static createErrorResponse(exception: ShapeTreeException): Response {
         const status = exception.getStatusCode();
         return new Response(exception.message, {status});
     }
 
     // @SneakyThrows
-    private createResponse(nativeRequest: Request, response: DocumentResponse): Response {
+    private static createResponse(response: DocumentResponse): Response {
       const headers = new Headers();
       const resourceAttributesOpt = response.getResourceAttributes();
       if (resourceAttributesOpt !== null) {
-          const resourceAttributes: ResourceAttributes = resourceAttributesOpt;
-          for (let pair of resourceAttributes.toMultimap()) {
+          for (let pair of resourceAttributesOpt.toMultimap()) {
               const [key, values] = pair;
               for (let value of values) {
                   headers.append(key, value);
@@ -104,20 +106,20 @@ export class HttpClientNodeFetchValidatingInterceptor {
 
      private resourceType: ShapeTreeResourceType | null;
 
-     private readonly body: string;
+     private readonly body: string | null;
 
-     private readonly contentType: string;
+     private readonly contentType: string | null;
 
      private readonly headers: ResourceAttributes;
 
-    public constructor(request: Request, body: string, contentType: string) {
+    public constructor(request: Request, body: string | null, contentType: string | null) {
       this.request = request;
       this.body = body;
       this.contentType = contentType;
       this.resourceType = null;
       const tm = new HeadersMultiMap();
       this.request.headers.forEach((value, key) => {
-          tm.replace(key, value);
+          tm.setCommaSeparated(key, value);
       });
       this.headers = new ResourceAttributes(tm);
     }
@@ -162,7 +164,7 @@ export class HttpClientNodeFetchValidatingInterceptor {
       this.resourceType = resourceType;
     }
 
-    public getBody(): string {
+    public getBody(): string | null {
       return this.body;
     }
   }
