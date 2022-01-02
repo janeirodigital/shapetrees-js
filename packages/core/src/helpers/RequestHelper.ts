@@ -91,6 +91,11 @@ export class RequestHelper {
       for (const focusNodeUrlString of focusNodeStrings) {
         try {
           const focusNodeUrl: URL = new URL(baseUrl.href, focusNodeUrlString);
+          try { // TODO: new URL("http://a.example/", "http://b.example/path/file.ext?search=parms#fragment") -> "http://b.example/path/file.ext"
+            const asUrl = new URL(focusNodeUrlString);
+            if (asUrl.search !== "") focusNodeUrl.search = asUrl.search;
+            if (asUrl.hash !== "") focusNodeUrl.hash = asUrl.hash;
+          } catch (e) {}
           focusNodeUrls.push(focusNodeUrl);
         } catch (ex) {
             throw new ShapeTreeException(500, "Malformed focus node when resolving <" + focusNodeUrlString + "> against <" + baseUrl + ">");

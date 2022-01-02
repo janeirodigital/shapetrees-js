@@ -32,7 +32,7 @@ export class HttpClientCrossFetchValidatingInterceptor {
 
     // @NotNull
     public async validatingWrap(input: Request | string, init?: RequestInit | undefined): Promise<Response> /* throws IOException, InterruptedException */ {
-        const fetchRequest = input instanceof Request
+        let fetchRequest = input instanceof Request
             ? input
             : new Request(input, init);
         const body: string | null = fetchRequest.body ? await fetchRequest.text() : null;
@@ -44,6 +44,24 @@ export class HttpClientCrossFetchValidatingInterceptor {
             try {
                 let shapeTreeResponse: DocumentResponse | null = await handler.validateRequest(shapeTreeRequest);
                 if (shapeTreeResponse === null) {
+                    if (fetchRequest.body !== null) {
+                        const newInit = // duplicate body because it has been consumed for validation
+                            // Object.assign({}, fetchRequest.clone(), {body});
+                            {
+                            method: fetchRequest.method,
+                            headers: fetchRequest.headers,
+                            cache: fetchRequest.cache,
+                            credentials: fetchRequest.credentials,
+                            mode: fetchRequest.mode,
+                            keepalive: fetchRequest.keepalive,
+                            redirect: fetchRequest.redirect,
+                            integrity: fetchRequest.integrity,
+                            referrerPolicy: fetchRequest.referrerPolicy,
+                            signal: fetchRequest.signal,
+                            body: body
+                        }
+                        fetchRequest = new Request(fetchRequest.url, newInit);
+                    }
                     return HttpClientCrossFetch.check(await fetch(fetchRequest));
                 } else {
                     return HttpClientCrossFetchValidatingInterceptor.createResponse(shapeTreeResponse);

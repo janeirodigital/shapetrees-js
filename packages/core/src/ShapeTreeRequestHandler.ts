@@ -141,7 +141,7 @@ export class ShapeTreeRequestHandler {
     }
 
     // if any of the provided focus nodes weren't matched validation must fail
-    let unmatchedNodes: Array<URL> = this.getUnmatchedFocusNodes(validationResults.values(), incomingFocusNodes);
+    let unmatchedNodes: Array<URL> = this.getUnmatchedFocusNodes([...validationResults.values()], incomingFocusNodes);
     if (unmatchedNodes.length !== 0) {
       return this.failValidation(new ValidationResult(false, null, "Failed to match target focus nodes: " + unmatchedNodes));
     }
@@ -373,14 +373,14 @@ export class ShapeTreeRequestHandler {
     return null;
   }
 
-  private getUnmatchedFocusNodes(validationResults: IterableIterator<ValidationResult>, focusNodes: Array<URL>): Array<URL> {
+  private getUnmatchedFocusNodes(validationResults: ValidationResult[], focusNodes: Array<URL>): Array<URL> {
     let unmatchedNodes: Array<URL> = new Array();
     for (const focusNode of focusNodes) {
       // Determine if each target focus node was matched
       let matched: boolean = false;
       for (const validationResult of validationResults) {
         if (validationResult.getMatchingShapeTree()!.getShape() != null) { // TODO: could be null
-          if (validationResult.getMatchingFocusNode() === focusNode) {
+          if (validationResult.getMatchingFocusNode()?.href === focusNode.href) {
             matched = true;
           }
         }
