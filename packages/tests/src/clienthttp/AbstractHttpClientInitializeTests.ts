@@ -1,27 +1,27 @@
 // Corresponding shapetrees-java package: com.janeirodigital.shapetrees.tests.clienthttp
 import { HttpClient } from '@shapetrees/client-http/src/HttpClient';
-import { RequestMatchingFixtureDispatcher } from '../fixtures/RequestMatchingFixtureDispatcher';
-import { AbstractHttpClientTests } from './AbstractHttpClientTests';
+import { HttpClientFactory } from '@shapetrees/client-http/src/HttpClientFactory';
 
 // @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
-export class AbstractHttpClientInitializeTests extends AbstractHttpClientTests {
+export class AbstractHttpClientInitializeTests {
 
-   private static dispatcher: RequestMatchingFixtureDispatcher = null!; // handled in beforeAll
+  private factory: HttpClientFactory = null!; // handled in beforeAll
 
-  public constructor() {
-    // Call AbstractHttpClient constructor
-    super();
-  }
+  runTests (driver: string) {
+    describe(`AbstractHttpClientTypeTests using ${driver}`, () => {
 
-  // @Test, @SneakyThrows
-  testNonValidatingHandler(): void {
-    let client: HttpClient = this.factory.get(false);
-    expect(client).not.toBeNull();
-  }
+// testNonValidatingHandler
+test("ask HttpClientFactory for non-validating client", () => {
+  let client: HttpClient = this.factory.get(false);
+  expect(client).not.toBeNull();
+});
 
-  // @Test, @SneakyThrows
-  testValidatingHandler(): void {
-    let client: HttpClient = this.factory.get(true);
-    expect(client).not.toBeNull();
+// testValidatingHandler
+test("ask HttpClientFactory for validating client", () => {
+  let client: HttpClient = this.factory.get(true);
+  expect(client).not.toBeNull();
+});
+
+    })
   }
 }
