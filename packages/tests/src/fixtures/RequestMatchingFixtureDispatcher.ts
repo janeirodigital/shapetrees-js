@@ -116,6 +116,7 @@ export class RequestMatchingFixtureDispatcher {
         if (configuredFixture.getExpectedHeaders() === null)
           return true;
         let recordedHeaders = new HeadersMultiMap();
+/*
         for (const [key, value] of Object.entries(recordedRequest.headers)) {
             if (value === undefined) {
             } else if (typeof value === 'string') { // repeated (link) headers appear to come in as a single, comma-separated string
@@ -124,6 +125,7 @@ export class RequestMatchingFixtureDispatcher {
                 recordedHeaders.set(key, value);
             }
         }
+*/
         for (const [expectedHeaderName, expectedHeaderValues] of configuredFixture.getExpectedHeaders()!.entries()) {
           if (!recordedHeaders.has(expectedHeaderName))
             return false;

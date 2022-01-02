@@ -21,7 +21,6 @@ import { DispatchEntryServer } from './fixtures/DispatchEntryServer';
 
 export class AbstractResourceAccessorTests {
 
-  protected resourceAccessor: ResourceAccessor = null!;
   protected server = new DispatchEntryServer();
   protected context = new ShapeTreeContext(null);
 
@@ -55,13 +54,18 @@ export class AbstractResourceAccessorTests {
   new DispatcherEntry(["errors/404"], "GET", "/static/resource/notpresent", null)
   ]);
 
-  httpExternalDocumentLoader: HttpExternalDocumentLoader = new HttpExternalDocumentLoader();
+  protected httpExternalDocumentLoader: HttpExternalDocumentLoader = new HttpExternalDocumentLoader();
   AbstractResourceAccessorTests () {
     DocumentLoaderManager.setLoader(this.httpExternalDocumentLoader);
   }
 
-  runTests () {
-    describe("from root", () => {
+  protected resourceAccessor: ResourceAccessor = null!;
+
+  public startServer() { return this.server.start(this.dispatcher); }
+  public stopServer() { return this.server.stop(); }
+
+  public runTests (driver: string) {
+    describe(`AbstractResourceAccessorTests using ${driver}`, () => {
 
 // Tests to Get ManageableInstances
 // getInstanceFromMissingResource

@@ -163,7 +163,7 @@ export class RequestHelper {
    */
   public static async getIncomingBodyGraph(shapeTreeRequest: ShapeTreeRequest, baseUrl: URL, targetResource: InstanceResource | null): Promise<Store | null> /* throws ShapeTreeException */ {
     log.debug("Reading request body into graph with baseUrl {}", baseUrl);
-    if ((shapeTreeRequest.getResourceType() === ShapeTreeResourceType.NON_RDF && shapeTreeRequest.getContentType()!.toLowerCase() !== "application/sparql-update") || shapeTreeRequest.getBody() === null || shapeTreeRequest.getBody().length === 0) { // TODO: contentType could be null
+    if ((shapeTreeRequest.getResourceType() === ShapeTreeResourceType.NON_RDF && shapeTreeRequest.getContentType()!.toLowerCase() !== "application/sparql-update") || shapeTreeRequest.getBody() === null || shapeTreeRequest.getBody()!.length === 0) { // TODO: contentType could be null
       return null;
     }
     let targetResourceGraph: Promise<Store> | null = null;
@@ -179,12 +179,12 @@ export class RequestHelper {
         targetResourceGraph = Promise.resolve(new Store());
       }
       // Perform a SPARQL update locally to ensure that resulting graph validates against ShapeTree
-      const {deletions, insertions} = new N3Sparql(shapeTreeRequest.getBody(), {baseIRI: baseUrl.toString()}).executeQuery(await targetResourceGraph);
+      const {deletions, insertions} = new N3Sparql(shapeTreeRequest.getBody()!, {baseIRI: baseUrl.toString()}).executeQuery(await targetResourceGraph);
       if (targetResourceGraph === null) {
         throw new ShapeTreeException(400, "No graph after update");
       }
     } else {
-      targetResourceGraph = GraphHelper.readStringIntoModel(baseUrl, shapeTreeRequest.getBody(), shapeTreeRequest.getContentType());
+      targetResourceGraph = GraphHelper.readStringIntoModel(baseUrl, shapeTreeRequest.getBody()!, shapeTreeRequest.getContentType());
     }
     return targetResourceGraph;
   }

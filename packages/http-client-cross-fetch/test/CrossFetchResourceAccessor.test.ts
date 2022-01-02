@@ -19,8 +19,6 @@ class CrossFetchResourceAccessorTests extends AbstractHttpClientResourceAccessor
 }
 
 const harness = new CrossFetchResourceAccessorTests();
-beforeAll(() => {
-    return harness.server.start(harness.dispatcher); }
-);
-afterAll(() => { return harness.server.stop(); });
-harness.runTests();
+beforeAll(() => { return harness.startServer(); });
+afterAll(() => { return harness.stopServer(); });
+harness.runTests("CrossFetch");

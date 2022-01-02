@@ -27,5 +27,5 @@ export class AbstractHttpClientResourceAccessorTests extends AbstractResourceAcc
         throw e;
       }
     }
- }
+  }
 }

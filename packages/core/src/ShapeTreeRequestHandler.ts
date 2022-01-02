@@ -109,6 +109,7 @@ export class ShapeTreeRequestHandler {
   // TODO: #87: do sanity checks on meta of meta, c.f. @see https://github.com/xformativ/shapetrees-java/issues/87
   public async createShapeTreeInstance(manageableInstance: ManageableInstance, containerResource: ManageableInstance, shapeTreeRequest: ShapeTreeRequest, proposedName: string): Promise<DocumentResponse | null> /* throws ShapeTreeException */ {
     // Sanity check user-owned resource @@ delete 'cause type checks
+    this.ensureExists(shapeTreeRequest.getBody(), "Can't create an instance without a body -- try \"\".")
     this.ensureInstanceResourceExists(containerResource.getManageableResource(), "Target container for resource creation not found");
     this.ensureRequestResourceIsContainer(containerResource.getManageableResource(), "Cannot create a shape tree instance in a non-container resource");
     // Prepare the target resource for validation and creation
@@ -145,7 +146,7 @@ export class ShapeTreeRequestHandler {
       return this.failValidation(new ValidationResult(false, null, "Failed to match target focus nodes: " + unmatchedNodes));
     }
     log.debug("Creating shape tree instance at {}", targetResourceUrl);
-    let createdInstance: ManageableInstance = await this.resourceAccessor.createInstance(manageableInstance.getShapeTreeContext(), shapeTreeRequest.getMethod(), targetResourceUrl, shapeTreeRequest.getHeaders(), shapeTreeRequest.getBody(), shapeTreeRequest.getContentType()!); // TODO: contentType could be null
+    let createdInstance: ManageableInstance = await this.resourceAccessor.createInstance(manageableInstance.getShapeTreeContext(), shapeTreeRequest.getMethod(), targetResourceUrl, shapeTreeRequest.getHeaders(), shapeTreeRequest.getBody()!, shapeTreeRequest.getContentType()!); // TODO: contentType could be null
     for (const containingAssignment of containingAssignments) {
 
       let rootShapeTreeAssignment: ShapeTreeAssignment = this.ensureAssignmentExists(
@@ -365,7 +366,7 @@ export class ShapeTreeRequestHandler {
     let rootManager: ShapeTreeManager | null = await this.getRootManager(shapeTreeContext, assignment); // TODO: could be null
 
     for (const rootAssignment of rootManager!.getAssignments()) {
-      if (rootAssignment.getUrl() != null && rootAssignment.getUrl() === assignment.getRootAssignment()) {
+      if (rootAssignment.getUrl() != null && rootAssignment.getUrl().href === assignment.getRootAssignment().href) {
         return rootAssignment;
       }
     }

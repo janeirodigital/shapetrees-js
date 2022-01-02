@@ -186,7 +186,7 @@ export class ShapeTree {
       // Test each supplied target shape tree
       for (const targetShapeTreeUrl of targetShapeTreeUrls!) {
         // Check if it exists in st:contains
-        if (this.contains.indexOf(targetShapeTreeUrl) !== -1) {
+        if (this.contains.map(u => u.href).indexOf(targetShapeTreeUrl.href) !== -1) {
           let targetShapeTree: ShapeTree = await ShapeTreeFactory.getShapeTree(targetShapeTreeUrl);
           // Evaluate the shape tree against the attributes of the proposed resources
           let result: ValidationResult = await targetShapeTree.validateResource(requestedName, focusNodeUrls!, resourceType!, bodyGraph!);
