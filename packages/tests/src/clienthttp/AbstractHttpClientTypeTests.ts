@@ -2,7 +2,6 @@
 import { DocumentResponse } from '@shapetrees/core/src/DocumentResponse';
 import { DispatcherEntry } from '../fixtures/DispatcherEntry';
 import { RequestMatchingFixtureDispatcher } from '../fixtures/RequestMatchingFixtureDispatcher';
-import {Mockttp, getLocal} from 'mockttp';
 import { AbstractHttpClientTests } from './AbstractHttpClientTests';
 
 // @TestMethodOrder(MethodOrderer.OrderAnnotation.class)

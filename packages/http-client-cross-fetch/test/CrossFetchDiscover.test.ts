@@ -3,13 +3,13 @@
 import { HttpClientFactoryManager } from '@shapetrees/client-http/src/HttpClientFactoryManager';
 import { HttpClientCrossFetchFactory } from "../src/HttpClientCrossFetchFactory";
 import { DocumentLoaderManager } from '@shapetrees/core/src/contentloaders/DocumentLoaderManager';
-import { AbstractHttpClientTypeTests } from '@shapetrees/tests/src/clienthttp/AbstractHttpClientTypeTests';
+import { AbstractHttpClientDiscoverTests } from '@shapetrees/tests/src/clienthttp/AbstractHttpClientDiscoverTests';
 
-class CrossFetchTypeTests extends AbstractHttpClientTypeTests {
+class CrossFetchDiscoverTests extends AbstractHttpClientDiscoverTests {
 
     public constructor() {
-        // Call AbstractHttpClientTypeTests constructor
-        // Which in turn calls the AbstractType constructor
+        // Call AbstractHttpClientDiscoverTests constructor
+        // Which in turn calls the AbstractDiscover constructor
         super();
 
         const myFactory = new HttpClientCrossFetchFactory(false);
@@ -21,7 +21,7 @@ class CrossFetchTypeTests extends AbstractHttpClientTypeTests {
     }
 }
 
-const harness = new CrossFetchTypeTests();
+const harness = new CrossFetchDiscoverTests();
 beforeAll(() => { return harness.startServer(); });
 afterAll(() => { return harness.stopServer(); });
 harness.runTests("CrossFetch");

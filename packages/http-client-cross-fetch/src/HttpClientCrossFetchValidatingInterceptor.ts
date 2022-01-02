@@ -164,7 +164,7 @@ export class HttpClientCrossFetchValidatingInterceptor {
       this.resourceType = resourceType;
     }
 
-    public getBody(): string | null {
-      return this.body;
+    public getBody(): string {
+      return this.body!;
     }
   }
