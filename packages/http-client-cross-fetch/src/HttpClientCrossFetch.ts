@@ -1,6 +1,7 @@
 // Corresponding shapetrees-java package: com.janeirodigital.shapetrees.javahttp
 import { HttpClient } from '@shapetrees/client-http/src/HttpClient';
 import { HttpRequest } from '@shapetrees/client-http/src/HttpRequest';
+import { HttpHeaders } from '@shapetrees/core/src/enums/HttpHeaders';
 import { DocumentResponse } from '@shapetrees/core/src/DocumentResponse';
 import { ResourceAttributes } from '@shapetrees/core/src/ResourceAttributes';
 import { ShapeTreeException } from '@shapetrees/core/src/exceptions/ShapeTreeException';
@@ -36,6 +37,9 @@ export class HttpClientCrossFetch implements HttpClient {
           headers.append(key, value);
         }
       }
+    }
+    if (request.contentType !== null && headers.get(HttpHeaders.CONTENT_TYPE) === null) {
+      headers.set(HttpHeaders.CONTENT_TYPE, request.contentType);
     }
     const opts: RequestInit = {
       method: request.method,

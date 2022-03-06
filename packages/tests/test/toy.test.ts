@@ -1,6 +1,9 @@
 import {DispatcherEntry} from "../src/fixtures/DispatcherEntry";
 import {RequestMatchingFixtureDispatcher} from "../src/fixtures/RequestMatchingFixtureDispatcher";
 import {DispatchEntryServer} from "../src/fixtures/DispatchEntryServer";
+import { DocumentResponse } from '@shapetrees/core/src/DocumentResponse';
+import { HttpShapeTreeClient } from '@shapetrees/client-http/src/HttpShapeTreeClient';
+import { ShapeTreeContext } from '@shapetrees/core/src/ShapeTreeContext';
 /*
 tried node-fetch but got:
     /home/eric/checkouts/janeirodigital/shapetrees-js/node_modules/node-fetch/src/index.js:9
@@ -16,44 +19,45 @@ import {fetch, Request} from 'cross-fetch';
 import * as log from 'loglevel';
 
 log.setLevel("info");
+const context = new ShapeTreeContext(null);
+const shapeTreeClient: HttpShapeTreeClient = new HttpShapeTreeClient();
 
-const MockServer = new DispatchEntryServer();
+const server = new DispatchEntryServer();
 const dispatcher = new RequestMatchingFixtureDispatcher([
-    new DispatcherEntry(["http/404", "discover/managed"], "GET",  "/path/1", null),
-    new DispatcherEntry(["http/201"                    ], "POST", "/path/1", null),
+    new DispatcherEntry(["project/data-container"], "GET", "/data/", null),
+    new DispatcherEntry(["project/projects-container"], "GET", "/data/projects/", null),
+    new DispatcherEntry(["project/project-1-container"], "GET", "/data/projects/project-1/", null),
+    new DispatcherEntry(["project/milestone-3-container"], "GET", "/data/projects/project-1/milestone-3/", null),
+    new DispatcherEntry(["project/task-48-container"], "GET", "/data/projects/project-1/milestone-3/task-48/", null),
+    new DispatcherEntry(["project/task-6-container-no-contains"], "GET", "/data/projects/project-1/milestone-3/task-6/", null),
+    new DispatcherEntry(["project/issue-2"], "GET", "/data/projects/project-1/milestone-3/issue-2", null),
+    new DispatcherEntry(["project/issue-3"], "GET", "/data/projects/project-1/milestone-3/issue-3", null),
+    new DispatcherEntry(["project/attachment-48"], "GET", "/data/projects/project-1/milestone-3/task-48/attachment-48", null),
+    new DispatcherEntry(["project/random-png"], "GET", "/data/projects/project-1/milestone-3/task-48/random.png", null),
+    new DispatcherEntry(["shapetrees/project-shapetree-ttl"], "GET", "/static/shapetrees/project/shapetree", null),
+    new DispatcherEntry(["schemas/project-shex"], "GET", "/static/shex/project/shex", null),
+    // new DispatcherEntry(["http/201"], "POST", "/data/.shapetree", null),
+    // new DispatcherEntry(["http/201"], "POST", "/data/projects/.shapetree", null),
+    new DispatcherEntry(["project/data-container-manager"], "GET", "/data/.shapetree", null),
+    new DispatcherEntry(["project/projects-container-manager"], "GET", "/data/projects/.shapetree", null),
+    new DispatcherEntry(["http/201"], "POST", "/data/projects/project-1/milestone-3/task-48/attachment-48.shapetree", null),
+    new DispatcherEntry(["http/201"], "POST", "/data/projects/project-1/milestone-3/task-48/random.png.shapetree", null),
+    new DispatcherEntry(["http/201"], "POST", "/data/projects/project-1/milestone-3/task-48/.shapetree", null),
+    new DispatcherEntry(["http/201"], "POST", "/data/projects/project-1/milestone-3/task-6/.shapetree", null),
+    new DispatcherEntry(["http/201"], "POST", "/data/projects/project-1/milestone-3/issue-3.shapetree", null),
+    new DispatcherEntry(["http/201"], "POST", "/data/projects/project-1/milestone-3/issue-2.shapetree", null),
+    new DispatcherEntry(["http/201"], "POST", "/data/projects/project-1/milestone-3/.shapetree", null),
+    new DispatcherEntry(["http/201"], "POST", "/data/projects/project-1/.shapetree", null),
 ]);
-beforeAll(() => { return MockServer.start(dispatcher); });
-afterAll(() => { return MockServer.stop(); });
+beforeAll(() => { return server.start(dispatcher); });
+afterAll(() => { return server.stop(); });
 
 test('GET path/1 -> 404', async () => {
-    const path = '/path/1';
-    const req = new Request(MockServer.urlFor(path).href, {
-        method: 'GET',
-        headers: {link: 'link1, link2'}
-    })
-    const resp1 = await fetch(req);
-    expect(await resp1.text()).toEqual(`404 Not expected to be found\n`);
-});
-
-test('POST path/1 -> 201', async () => {
-    const path = '/path/1';
-    const req = new Request(MockServer.urlFor(path).href, {
-        method: 'POST',
-        headers: {link: 'link1, link2'},
-        body: '  <#a> <#b> <#c> .\n'
-    })
-    const resp1 = await fetch(req);
-    expect(await resp1.text()).toEqual(`201 Created content\n`);
-});
-
-test('GET path/1 -> 200', async () => {
-    const path = '/path/1';
-    const req = new Request(MockServer.urlFor(path).href, {
-        method: 'GET',
-        headers: {link: 'link1, link2'}
-    })
-    const resp1 = await fetch(req);
-    expect(await resp1.text()).toEqual(`<#a> <#b> <#c> .\n`);
+    let targetResource: URL = server.urlFor("/data/projects/");
+    let targetShapeTree: URL = server.urlFor("/static/shapetrees/project/shapetree#ProjectCollectionTree");
+    // Plant the projects collection recursively on already existing hierarchy
+    let response: DocumentResponse = await shapeTreeClient.plantShapeTree(context, targetResource, targetShapeTree, null!);
+    expect(201).toEqual(response.getStatusCode());
 });
 
 /*

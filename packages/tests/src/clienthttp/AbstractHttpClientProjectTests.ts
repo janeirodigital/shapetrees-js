@@ -10,98 +10,92 @@ import { AbstractHttpClientTests } from './AbstractHttpClientTests';
 // @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 export class AbstractHttpClientProjectTests extends AbstractHttpClientTests {
 
-   private static dispatcher: RequestMatchingFixtureDispatcher = null!; // handled by beforeAll
+  private static dispatcher: RequestMatchingFixtureDispatcher = null!; // handled by beforeAll
 
   public constructor() {
     // Call AbstractHttpClient constructor
     super();
   }
 
-  // @BeforeEach
-  initializeDispatcher(): void {
-    // For this set of tests, we reinitialize the dispatcher set for every test, because almost every test needs a
-    // slightly different context. Consequently, we could either modify the state from test to test (which felt a
-    // little dirty as we couldn't run tests standalone, or set the context for each test (which we're doing)
-    let dispatcherList: Array<DispatcherEntry> = new Array();
-    dispatcherList.push(new DispatcherEntry(["project/root-container"], "GET", "/", null));
-    dispatcherList.push(new DispatcherEntry(["project/root-container-manager"], "GET", "/.shapetree", null));
-    dispatcherList.push(new DispatcherEntry(["shapetrees/project-shapetree-ttl"], "GET", "/static/shapetrees/project/shapetree", null));
-    dispatcherList.push(new DispatcherEntry(["shapetrees/information-shapetree-ttl"], "GET", "/static/shapetrees/information/shapetree", null));
-    dispatcherList.push(new DispatcherEntry(["schemas/project-shex"], "GET", "/static/shex/project/shex", null));
-    dispatcherList.push(new DispatcherEntry(["schemas/information-shex"], "GET", "/static/shex/information/shex", null));
-    AbstractHttpClientProjectTests.dispatcher = new RequestMatchingFixtureDispatcher(dispatcherList);
-  }
+    // > For this set of tests, we reinitialize the dispatcher set for every test, because almost every test needs a
+    // > slightly different context. Consequently, we could either modify the state from test to test (which felt a
+    // > little dirty as we couldn't run tests standalone, or set the context for each test (which we're doing)
+    // ... Not sure this is true anymore -- ericP
+  dispatcher = new RequestMatchingFixtureDispatcher([
+    new DispatcherEntry(["project/root-container"], "GET", "/", null),
+    new DispatcherEntry(["project/root-container-manager"], "GET", "/.shapetree", null),
+    new DispatcherEntry(["shapetrees/project-shapetree-ttl"], "GET", "/static/shapetrees/project/shapetree", null),
+    new DispatcherEntry(["shapetrees/information-shapetree-ttl"], "GET", "/static/shapetrees/information/shapetree", null),
+    new DispatcherEntry(["schemas/project-shex"], "GET", "/static/shex/project/shex", null),
+    new DispatcherEntry(["schemas/information-shex"], "GET", "/static/shex/information/shex", null),
+  ]);
 
-  // @SneakyThrows, @Test, @DisplayName("Discover unmanaged root resource")
-  discoverUnmanagedRoot(): void {
-    const server = getLocal({ debug: false });
-    server.setDispatcher(AbstractHttpClientProjectTests.dispatcher);
-    let targetResource: URL = this.toUrl(server, "/");
+  public startServer() { return this.server.start(this.dispatcher); }
+  public stopServer() { return this.server.stop(); }
+
+  runTests (driver: string) {
+    describe(`AbstractHttpClientProjectTests using ${driver}`, () => {
+
+// discoverUnmanagedRoot
+test("Discover unmanaged root resource", async () => {
+    let targetResource: URL = this.server.urlFor("/");
     // Use the discover operation to see if the root container is managed
-    let manager: ShapeTreeManager = this.shapeTreeClient.discoverShapeTree(this.context, targetResource).orElse(null);
+    let manager: ShapeTreeManager | null = (await this.shapeTreeClient.discoverShapeTree(this.context, targetResource)) || null;
     // The root container isn't managed so check to ensure that a NULL value is returned
     expect(manager).toBeNull();
-  }
+});
 
-  // @SneakyThrows, @Test, @DisplayName("Fail to plant on a non-existent data container")
-  failPlantOnMissingDataContainer(): void {
-    const server = getLocal({ debug: false });
-    server.setDispatcher(AbstractHttpClientProjectTests.dispatcher);
-    let targetResource: URL = this.toUrl(server, "/data/");
-    let targetShapeTree: URL = this.toUrl(server, "/static/shapetrees/project/shapetree#DataRepositoryTree");
+// failPlantOnMissingDataContainer
+test("Fail to plant on a non-existent data container", async () => {
+    let targetResource: URL = this.server.urlFor("/data/");
+    let targetShapeTree: URL = this.server.urlFor("/static/shapetrees/project/shapetree#DataRepositoryTree");
     // Perform plant on /data container that doesn't exist yet (fails)
-    let response: DocumentResponse = this.shapeTreeClient.plantShapeTree(this.context, targetResource, targetShapeTree, null);
+    let response: DocumentResponse = await this.shapeTreeClient.plantShapeTree(this.context, targetResource, targetShapeTree, null);
     // Look for 404 because /data doesn't exist
     expect(404).toEqual(response.getStatusCode());
-  }
+});
 
-  // @SneakyThrows, @Test, @DisplayName("Plant Data Repository")
-  plantDataRepository(): void {
-    const server = getLocal({ debug: false });
-    server.setDispatcher(AbstractHttpClientProjectTests.dispatcher);
+// plantDataRepository
+test("Plant Data Repository", async () => {
     // Create the data container
     AbstractHttpClientProjectTests.dispatcher.getConfiguredFixtures().push(new DispatcherEntry(["project/data-container-no-contains"], "GET", "/data/", null));
     AbstractHttpClientProjectTests.dispatcher.getConfiguredFixtures().push(new DispatcherEntry(["http/201"], "POST", "/data/.shapetree", null));
-    let targetResource: URL = this.toUrl(server, "/data/");
-    let targetShapeTree: URL = this.toUrl(server, "/static/shapetrees/project/shapetree#DataRepositoryTree");
-    let focusNode: URL = this.toUrl(server, "/data/#repository");
+    let targetResource: URL = this.server.urlFor("/data/");
+    let targetShapeTree: URL = this.server.urlFor("/static/shapetrees/project/shapetree#DataRepositoryTree");
+    let focusNode: URL = this.server.urlFor("/data/#repository");
     // Plant the data repository on newly created data container
-    let response: DocumentResponse = this.shapeTreeClient.plantShapeTree(this.context, targetResource, targetShapeTree, focusNode);
+    let response: DocumentResponse = await this.shapeTreeClient.plantShapeTree(this.context, targetResource, targetShapeTree, focusNode);
     expect(201).toEqual(response.getStatusCode());
-  }
+});
 
-  // @SneakyThrows, @Test, @DisplayName("Fail to plant on missing shape tree")
-  failPlantOnMissingShapeTree(): void {
-    const server = getLocal({ debug: false });
-    server.setDispatcher(AbstractHttpClientProjectTests.dispatcher);
+// failPlantOnMissingShapeTree
+test("Fail to plant on missing shape tree", async () => {
     // Create the data container
     AbstractHttpClientProjectTests.dispatcher.getConfiguredFixtures().push(new DispatcherEntry(["project/data-container-no-contains"], "GET", "/data/", null));
-    let targetResource: URL = this.toUrl(server, "/data/");
-    let targetShapeTree: URL = this.toUrl(server, "/static/shapetrees/missing/shapetree#NonExistentTree");
-    let focusNode: URL = this.toUrl(server, "/data/#repository");
+    let targetResource: URL = this.server.urlFor("/data/");
+    let targetShapeTree: URL = this.server.urlFor("/static/shapetrees/missing/shapetree#NonExistentTree");
+    let focusNode: URL = this.server.urlFor("/data/#repository");
     // Plant will fail and throw an exception when the shape tree to plant cannot be looked up
     expect(async () => {
       let response: DocumentResponse = await this.shapeTreeClient.plantShapeTree(this.context, targetResource, targetShapeTree, focusNode);
     }).rejects.toBeInstanceOf(ShapeTreeException);
-  }
+});
 
-  // @SneakyThrows, @Test, @DisplayName("Create Projects Container and Validate DataCollectionTree and InformationSetTree")
-  createAndValidateProjectsWithMultipleContains(): void {
-    const server = getLocal({ debug: false });
-    server.setDispatcher(AbstractHttpClientProjectTests.dispatcher);
+// createAndValidateProjectsWithMultipleContains
+test("Create Projects Container and Validate DataCollectionTree and InformationSetTree", async () => {
     // Setup initial fixtures for /data/
     AbstractHttpClientProjectTests.dispatcher.getConfiguredFixtures().push(new DispatcherEntry(["project/data-container"], "GET", "/data/", null));
     AbstractHttpClientProjectTests.dispatcher.getConfiguredFixtures().push(new DispatcherEntry(["project/data-container-multiplecontains-manager"], "GET", "/data/.shapetree", null));
     // Add fixture for /projects/ to handle the POST response
     AbstractHttpClientProjectTests.dispatcher.getConfiguredFixtures().push(new DispatcherEntry(["project/projects-container-create-response"], "POST", "/data/projects/", null));
     AbstractHttpClientProjectTests.dispatcher.getConfiguredFixtures().push(new DispatcherEntry(["http/201"], "POST", "/data/projects/.shapetree", null));
-    let parentContainer: URL = this.toUrl(server, "/data/");
-    let focusNodes: Array<URL> = [this.toUrl(server, "/data/projects/#collection")];
-    let targetShapeTrees: Array<URL> = [this.toUrl(server, "/static/shapetrees/project/shapetree#DataCollectionTree"), this.toUrl(server, "/static/shapetrees/information/shapetree#InformationSetTree")];
+    let parentContainer: URL = this.server.urlFor("/data/");
+    let focusNodes: Array<URL> = [this.server.urlFor("/data/projects/#collection")];
+    let targetShapeTrees: Array<URL> = [this.server.urlFor("/static/shapetrees/project/shapetree#DataCollectionTree"), this.server.urlFor("/static/shapetrees/information/shapetree#InformationSetTree")];
     // Create the projects container as a managed instance.
     // 1. Will be validated by the parent DataRepositoryTree and the InformationSetTree both planted on /data (multiple contains)
     // 2. Will have a manager/assignment created for it as an instance of DataCollectionTree and InformationSetTree
-    let response: DocumentResponse = this.shapeTreeClient.postManagedInstance(this.context, parentContainer, focusNodes, "projects", true, targetShapeTrees, this.getProjectsBodyGraph(), AbstractHttpClientProjectTests.TEXT_TURTLE);
+    let response: DocumentResponse = await this.shapeTreeClient.postManagedInstance(this.context, parentContainer, focusNodes, "projects", true, targetShapeTrees, this.getProjectsBodyGraph(), AbstractHttpClientProjectTests.TEXT_TURTLE);
     expect(201).toEqual(response.getStatusCode());
     // Another attempt without any target shape trees
     response = this.shapeTreeClient.postManagedInstance(this.context, parentContainer, focusNodes, "projects", true, null, this.getProjectsBodyGraph(), AbstractHttpClientProjectTests.TEXT_TURTLE);
@@ -112,49 +106,43 @@ export class AbstractHttpClientProjectTests extends AbstractHttpClientTests {
     // Another attempt without any only one of two target shape trees
     response = this.shapeTreeClient.postManagedInstance(this.context, parentContainer, null, "projects", true, targetShapeTrees, this.getProjectsBodyGraph(), AbstractHttpClientProjectTests.TEXT_TURTLE);
     expect(201).toEqual(response.getStatusCode());
-  }
+});
 
-  // @SneakyThrows, @Test, @DisplayName("Create Projects Container and Validate DataCollectionTree")
-  createAndValidateProjects(): void {
-    const server = getLocal({ debug: false });
-    server.setDispatcher(AbstractHttpClientProjectTests.dispatcher);
+// createAndValidateProjects
+test("Create Projects Container and Validate DataCollectionTree", async () => {
     // Setup initial fixtures for /data/
     AbstractHttpClientProjectTests.dispatcher.getConfiguredFixtures().push(new DispatcherEntry(["project/data-container"], "GET", "/data/", null));
     AbstractHttpClientProjectTests.dispatcher.getConfiguredFixtures().push(new DispatcherEntry(["project/data-container-manager"], "GET", "/data/.shapetree", null));
     // Add fixture for /projects/ to handle the POST response
     AbstractHttpClientProjectTests.dispatcher.getConfiguredFixtures().push(new DispatcherEntry(["project/projects-container-create-response"], "POST", "/data/projects/", null));
     AbstractHttpClientProjectTests.dispatcher.getConfiguredFixtures().push(new DispatcherEntry(["http/201"], "POST", "/data/projects/.shapetree", null));
-    let parentContainer: URL = this.toUrl(server, "/data/");
-    let focusNodes: Array<URL> = [this.toUrl(server, "/data/projects/#collection")];
-    let targetShapeTrees: Array<URL> = [this.toUrl(server, "/static/shapetrees/project/shapetree#DataCollectionTree")];
+    let parentContainer: URL = this.server.urlFor("/data/");
+    let focusNodes: Array<URL> = [this.server.urlFor("/data/projects/#collection")];
+    let targetShapeTrees: Array<URL> = [this.server.urlFor("/static/shapetrees/project/shapetree#DataCollectionTree")];
     // Create the projects container as a shape tree instance.
     // 1. Will be validated by the parent DataRepositoryTree planted on /data
     // 2. Will have a manager/assignment created for it as an instance of DataCollectionTree
-    let response: DocumentResponse = this.shapeTreeClient.postManagedInstance(this.context, parentContainer, focusNodes, "projects", true, targetShapeTrees, this.getProjectsBodyGraph(), AbstractHttpClientProjectTests.TEXT_TURTLE);
+    let response: DocumentResponse = await this.shapeTreeClient.postManagedInstance(this.context, parentContainer, focusNodes, "projects", true, targetShapeTrees, this.getProjectsBodyGraph(), AbstractHttpClientProjectTests.TEXT_TURTLE);
     expect(201).toEqual(response.getStatusCode());
-  }
+});
 
-  // @SneakyThrows, @Test, @DisplayName("Plant ProjectCollectionTree on Projects Container")
-  plantSecondShapeTreeOnProjects(): void {
-    const server = getLocal({ debug: false });
-    server.setDispatcher(AbstractHttpClientProjectTests.dispatcher);
+// plantSecondShapeTreeOnProjects
+test("Plant ProjectCollectionTree on Projects Container", async () => {
     // Add fixtures for /data/
     AbstractHttpClientProjectTests.dispatcher.getConfiguredFixtures().push(new DispatcherEntry(["project/data-container"], "GET", "/data/", null));
     AbstractHttpClientProjectTests.dispatcher.getConfiguredFixtures().push(new DispatcherEntry(["project/data-container-manager"], "GET", "/data/.shapetree", null));
     // Add fixtures for /projects/
     AbstractHttpClientProjectTests.dispatcher.getConfiguredFixtures().push(new DispatcherEntry(["project/projects-container-no-contains"], "GET", "/data/projects/", null));
     AbstractHttpClientProjectTests.dispatcher.getConfiguredFixtures().push(new DispatcherEntry(["project/projects-container-manager"], "GET", "/data/projects/.shapetree", null));
-    let targetResource: URL = this.toUrl(server, "/data/projects/");
-    let targetShapeTree: URL = this.toUrl(server, "/static/shapetrees/project/shapetree#ProjectCollectionTree");
+    let targetResource: URL = this.server.urlFor("/data/projects/");
+    let targetShapeTree: URL = this.server.urlFor("/static/shapetrees/project/shapetree#ProjectCollectionTree");
     // Plant the second shape tree (ProjectCollectionTree) on /data/projects/
-    let response: DocumentResponse = this.shapeTreeClient.plantShapeTree(this.context, targetResource, targetShapeTree, null);
+    let response: DocumentResponse = await this.shapeTreeClient.plantShapeTree(this.context, targetResource, targetShapeTree, null);
     expect(201).toEqual(response.getStatusCode());
-  }
+});
 
-  // @SneakyThrows, @Test, @DisplayName("Create Project in the Projects Collection")
-  createProjectInProjects(): void {
-    const server = getLocal({ debug: false });
-    server.setDispatcher(AbstractHttpClientProjectTests.dispatcher);
+// createProjectInProjects
+test("Create Project in the Projects Collection", async () => {
     // Add fixtures for /data/
     AbstractHttpClientProjectTests.dispatcher.getConfiguredFixtures().push(new DispatcherEntry(["project/data-container"], "GET", "/data/", null));
     AbstractHttpClientProjectTests.dispatcher.getConfiguredFixtures().push(new DispatcherEntry(["project/data-container-manager"], "GET", "/data/.shapetree", null));
@@ -164,20 +152,18 @@ export class AbstractHttpClientProjectTests extends AbstractHttpClientTests {
     // Add fixture for /projects/project-1/ to handle the POST response
     AbstractHttpClientProjectTests.dispatcher.getConfiguredFixtures().push(new DispatcherEntry(["project/project-1-create-response"], "POST", "/data/projects/project-1/", null));
     AbstractHttpClientProjectTests.dispatcher.getConfiguredFixtures().push(new DispatcherEntry(["http/201"], "POST", "/data/projects/project-1/.shapetree", null));
-    let parentContainer: URL = this.toUrl(server, "/data/projects/");
-    let focusNodes: Array<URL> = [this.toUrl(server, "/data/projects/project-1/#project")];
-    let targetShapeTrees: Array<URL> = [this.toUrl(server, "/static/shapetrees/project/shapetree#ProjectTree")];
+    let parentContainer: URL = this.server.urlFor("/data/projects/");
+    let focusNodes: Array<URL> = [this.server.urlFor("/data/projects/project-1/#project")];
+    let targetShapeTrees: Array<URL> = [this.server.urlFor("/static/shapetrees/project/shapetree#ProjectTree")];
     // Create the project-1 container as a shape tree instance.
     // 1. Will be validated by the parent ProjectCollectionTree planted on /data/projects/
     // 2. Will have a manager/assignment created for it as an instance of ProjectTree
-    let response: DocumentResponse = this.shapeTreeClient.postManagedInstance(this.context, parentContainer, focusNodes, "project-1", true, targetShapeTrees, this.getProjectOneBodyGraph(), AbstractHttpClientProjectTests.TEXT_TURTLE);
+    let response: DocumentResponse = await this.shapeTreeClient.postManagedInstance(this.context, parentContainer, focusNodes, "project-1", true, targetShapeTrees, this.getProjectOneBodyGraph(), AbstractHttpClientProjectTests.TEXT_TURTLE);
     expect(201).toEqual(response.getStatusCode());
-  }
+});
 
-  // @SneakyThrows, @Test, @DisplayName("Update Project in the Projects Collection")
-  updateProjectInProjects(): void {
-    const server = getLocal({ debug: false });
-    server.setDispatcher(AbstractHttpClientProjectTests.dispatcher);
+// updateProjectInProjects
+test("Update Project in the Projects Collection", async () => {
     // Add fixtures for /data/
     AbstractHttpClientProjectTests.dispatcher.getConfiguredFixtures().push(new DispatcherEntry(["project/data-container"], "GET", "/data/", null));
     AbstractHttpClientProjectTests.dispatcher.getConfiguredFixtures().push(new DispatcherEntry(["project/data-container-manager"], "GET", "/data/.shapetree", null));
@@ -189,39 +175,35 @@ export class AbstractHttpClientProjectTests extends AbstractHttpClientTests {
     AbstractHttpClientProjectTests.dispatcher.getConfiguredFixtures().push(new DispatcherEntry(["project/project-1-container-manager"], "GET", "/data/projects/project-1/.shapetree", null));
     // Add fixture for updated project-1
     AbstractHttpClientProjectTests.dispatcher.getConfiguredFixtures().push(new DispatcherEntry(["project/project-1-container-no-contains-updated"], "PUT", "/data/projects/project-1/", null));
-    let targetResource: URL = this.toUrl(server, "/data/projects/project-1/");
-    let focusNodes: Array<URL> = [this.toUrl(server, "/data/projects/project-1/#project")];
+    let targetResource: URL = this.server.urlFor("/data/projects/project-1/");
+    let focusNodes: Array<URL> = [this.server.urlFor("/data/projects/project-1/#project")];
     // Update the project-1 container as a shape tree instance.
     // 1. Will be validated by the parent ProjectCollectionTree planted on /data/projects/
     // 2. Will have a manager/assignment created for it as an instance of ProjectTree
-    let response: DocumentResponse = this.shapeTreeClient.updateManagedInstance(this.context, targetResource, focusNodes, this.getProjectOneUpdatedBodyGraph(), AbstractHttpClientProjectTests.TEXT_TURTLE);
+    let response: DocumentResponse = await this.shapeTreeClient.updateManagedInstance(this.context, targetResource, focusNodes, this.getProjectOneUpdatedBodyGraph(), AbstractHttpClientProjectTests.TEXT_TURTLE);
     expect(200).toEqual(response.getStatusCode());
-  }
+});
 
-  // @SneakyThrows, @Test, @DisplayName("Fail to Create a Malformed Project in the Projects Collection")
-  failToCreateMalformedProject(): void {
-    const server = getLocal({ debug: false });
-    server.setDispatcher(AbstractHttpClientProjectTests.dispatcher);
+// failToCreateMalformedProject
+test("Fail to Create a Malformed Project in the Projects Collection", async () => {
     // Add fixtures for /data/
     AbstractHttpClientProjectTests.dispatcher.getConfiguredFixtures().push(new DispatcherEntry(["project/data-container"], "GET", "/data/", null));
     AbstractHttpClientProjectTests.dispatcher.getConfiguredFixtures().push(new DispatcherEntry(["project/data-container-manager"], "GET", "/data/.shapetree", null));
     // Add fixtures for /projects/
     AbstractHttpClientProjectTests.dispatcher.getConfiguredFixtures().push(new DispatcherEntry(["project/projects-container"], "GET", "/data/projects/", null));
     AbstractHttpClientProjectTests.dispatcher.getConfiguredFixtures().push(new DispatcherEntry(["project/projects-container-manager-two-assignments"], "GET", "/data/projects/.shapetree", null));
-    let targetResource: URL = this.toUrl(server, "/data/projects/project-1/");
-    let focusNodes: Array<URL> = [this.toUrl(server, "/data/projects/project-1/#project")];
-    let targetShapeTrees: Array<URL> = [this.toUrl(server, "/static/shapetrees/project/shapetree#ProjectTree")];
+    let targetResource: URL = this.server.urlFor("/data/projects/project-1/");
+    let focusNodes: Array<URL> = [this.server.urlFor("/data/projects/project-1/#project")];
+    let targetShapeTrees: Array<URL> = [this.server.urlFor("/static/shapetrees/project/shapetree#ProjectTree")];
     // Create the project-1 container as a shape tree instance via PUT
     // 1. Will be validated by the parent ProjectCollectionTree planted on /data/projects/
-    let response: DocumentResponse = this.shapeTreeClient.putManagedInstance(this.context, targetResource, focusNodes, this.getProjectOneMalformedBodyGraph(), AbstractHttpClientProjectTests.TEXT_TURTLE, targetShapeTrees, true);
+    let response: DocumentResponse = await this.shapeTreeClient.putManagedInstance(this.context, targetResource, focusNodes, this.getProjectOneMalformedBodyGraph(), AbstractHttpClientProjectTests.TEXT_TURTLE, targetShapeTrees, true);
     // 2. Will fail validation because the body content doesn't validate against the assigned shape
     expect(422).toEqual(response.getStatusCode());
-  }
+});
 
-  // @SneakyThrows, @Test, @DisplayName("Fail to Update a Project to be Malformed in the Projects Collection")
-  failToUpdateMalformedProject(): void {
-    const server = getLocal({ debug: false });
-    server.setDispatcher(AbstractHttpClientProjectTests.dispatcher);
+// failToUpdateMalformedProject
+test("Fail to Update a Project to be Malformed in the Projects Collection", async () => {
     // try to update an existing project-1 to be malformed and fail validation
     // Add fixtures for /data/
     AbstractHttpClientProjectTests.dispatcher.getConfiguredFixtures().push(new DispatcherEntry(["project/data-container"], "GET", "/data/", null));
@@ -232,19 +214,17 @@ export class AbstractHttpClientProjectTests extends AbstractHttpClientTests {
     // Add fixture for /projects/project-1/
     AbstractHttpClientProjectTests.dispatcher.getConfiguredFixtures().push(new DispatcherEntry(["project/project-1-container-no-contains"], "GET", "/data/projects/project-1/", null));
     AbstractHttpClientProjectTests.dispatcher.getConfiguredFixtures().push(new DispatcherEntry(["project/project-1-container-manager"], "GET", "/data/projects/project-1/.shapetree", null));
-    let targetResource: URL = this.toUrl(server, "/data/projects/project-1/");
-    let focusNodes: Array<URL> = [this.toUrl(server, "/data/projects/project-1/#project")];
+    let targetResource: URL = this.server.urlFor("/data/projects/project-1/");
+    let focusNodes: Array<URL> = [this.server.urlFor("/data/projects/project-1/#project")];
     // Update the project-1 container as a shape tree instance via PUT
     // 1. Will be validated by the parent ProjectCollectionTree planted on /data/projects/
-    let response: DocumentResponse = this.shapeTreeClient.updateManagedInstance(this.context, targetResource, focusNodes, this.getProjectOneMalformedBodyGraph(), AbstractHttpClientProjectTests.TEXT_TURTLE);
+    let response: DocumentResponse = await this.shapeTreeClient.updateManagedInstance(this.context, targetResource, focusNodes, this.getProjectOneMalformedBodyGraph(), AbstractHttpClientProjectTests.TEXT_TURTLE);
     // 2. Will fail validation because the body content doesn't validate against the assigned shape
     expect(422).toEqual(response.getStatusCode());
-  }
+});
 
-  // @SneakyThrows, @Test, @DisplayName("Create Milestone in Project With Put")
-  createMilestoneInProjectWithPut(): void {
-    const server = getLocal({ debug: false });
-    server.setDispatcher(AbstractHttpClientProjectTests.dispatcher);
+// createMilestoneInProjectWithPut
+test("Create Milestone in Project With Put", async () => {
     // Add fixtures for /data/
     AbstractHttpClientProjectTests.dispatcher.getConfiguredFixtures().push(new DispatcherEntry(["project/data-container"], "GET", "/data/", null));
     AbstractHttpClientProjectTests.dispatcher.getConfiguredFixtures().push(new DispatcherEntry(["project/data-container-manager"], "GET", "/data/.shapetree", null));
@@ -257,20 +237,18 @@ export class AbstractHttpClientProjectTests extends AbstractHttpClientTests {
     // Add fixture for /projects/project-1/milestone-3 to handle response to create via PUT
     AbstractHttpClientProjectTests.dispatcher.getConfiguredFixtures().push(new DispatcherEntry(["project/milestone-3-container-no-contains"], "PUT", "/data/projects/project-1/milestone-3/", null));
     AbstractHttpClientProjectTests.dispatcher.getConfiguredFixtures().push(new DispatcherEntry(["http/201"], "POST", "/data/projects/project-1/milestone-3/.shapetree", null));
-    let targetResource: URL = this.toUrl(server, "/data/projects/project-1/milestone-3/");
-    let focusNodes: Array<URL> = [this.toUrl(server, "/data/projects/project-1/milestone-3/#milestone")];
-    let targetShapeTrees: Array<URL> = [this.toUrl(server, "/static/shapetrees/project/shapetree#MilestoneTree")];
+    let targetResource: URL = this.server.urlFor("/data/projects/project-1/milestone-3/");
+    let focusNodes: Array<URL> = [this.server.urlFor("/data/projects/project-1/milestone-3/#milestone")];
+    let targetShapeTrees: Array<URL> = [this.server.urlFor("/static/shapetrees/project/shapetree#MilestoneTree")];
     // Create the milestone-3 container in /projects/project-1/ as a shape tree instance using PUT to create
     // 1. Will be validated by the parent ProjectTree planted on /data/projects/project-1/
     // 2. Will have a manager/assignment created for it as an instance of MilestoneTree
-    let response: DocumentResponse = this.shapeTreeClient.putManagedInstance(this.context, targetResource, focusNodes, this.getMilestoneThreeBodyGraph(), AbstractHttpClientProjectTests.TEXT_TURTLE, targetShapeTrees, true);
+    let response: DocumentResponse = await this.shapeTreeClient.putManagedInstance(this.context, targetResource, focusNodes, this.getMilestoneThreeBodyGraph(), AbstractHttpClientProjectTests.TEXT_TURTLE, targetShapeTrees, true);
     expect(201).toEqual(response.getStatusCode());
-  }
+});
 
-  // @SneakyThrows, @Test, @DisplayName("Update Milestone in Project With Patch")
-  updateMilestoneInProjectWithPatch(): void {
-    const server = getLocal({ debug: false });
-    server.setDispatcher(AbstractHttpClientProjectTests.dispatcher);
+// updateMilestoneInProjectWithPatch
+test("Update Milestone in Project With Patch", async () => {
     // Add fixtures for /data/
     AbstractHttpClientProjectTests.dispatcher.getConfiguredFixtures().push(new DispatcherEntry(["project/data-container"], "GET", "/data/", null));
     AbstractHttpClientProjectTests.dispatcher.getConfiguredFixtures().push(new DispatcherEntry(["project/data-container-manager"], "GET", "/data/.shapetree", null));
@@ -285,18 +263,16 @@ export class AbstractHttpClientProjectTests extends AbstractHttpClientTests {
     AbstractHttpClientProjectTests.dispatcher.getConfiguredFixtures().push(new DispatcherEntry(["project/milestone-3-container-manager"], "GET", "/data/projects/project-1/milestone-3/.shapetree", null));
     // Add fixture for /projects/project-1/milestone-3 to handle response to update via PATCH
     AbstractHttpClientProjectTests.dispatcher.getConfiguredFixtures().push(new DispatcherEntry(["project/milestone-3-container-no-contains-updated"], "PATCH", "/data/projects/project-1/milestone-3/", null));
-    let targetResource: URL = this.toUrl(server, "/data/projects/project-1/milestone-3/");
-    let focusNodes: Array<URL> = [this.toUrl(server, "/data/projects/project-1/milestone-3/#milestone")];
+    let targetResource: URL = this.server.urlFor("/data/projects/project-1/milestone-3/");
+    let focusNodes: Array<URL> = [this.server.urlFor("/data/projects/project-1/milestone-3/#milestone")];
     // Update the milestone-3 container in /projects/project-1/ using PATCH
     // 1. Will be validated by the MilestoneTree planted on /data/projects/project-1/milestone-3/
-    let response: DocumentResponse = this.shapeTreeClient.patchManagedInstance(this.context, targetResource, focusNodes, this.getMilestoneThreeSparqlPatch());
+    let response: DocumentResponse = await this.shapeTreeClient.patchManagedInstance(this.context, targetResource, focusNodes, this.getMilestoneThreeSparqlPatch());
     expect(201).toEqual(response.getStatusCode());
-  }
+});
 
-  // @SneakyThrows, @Test, @DisplayName("Create First Task in Project With Patch")
-  createFirstTaskInProjectWithPatch(): void {
-    const server = getLocal({ debug: false });
-    server.setDispatcher(AbstractHttpClientProjectTests.dispatcher);
+// createFirstTaskInProjectWithPatch
+test("Create First Task in Project With Patch", async () => {
     // Add fixtures for /data/
     AbstractHttpClientProjectTests.dispatcher.getConfiguredFixtures().push(new DispatcherEntry(["project/data-container"], "GET", "/data/", null));
     AbstractHttpClientProjectTests.dispatcher.getConfiguredFixtures().push(new DispatcherEntry(["project/data-container-manager"], "GET", "/data/.shapetree", null));
@@ -312,18 +288,16 @@ export class AbstractHttpClientProjectTests extends AbstractHttpClientTests {
     // Add fixture for /projects/project-1/milestone-3/task-6/ to handle response to update via PATCH
     AbstractHttpClientProjectTests.dispatcher.getConfiguredFixtures().push(new DispatcherEntry(["project/task-6-container-no-contains-updated"], "PATCH", "/data/projects/project-1/milestone-3/task-6/", null));
     AbstractHttpClientProjectTests.dispatcher.getConfiguredFixtures().push(new DispatcherEntry(["http/201"], "POST", "/data/projects/project-1/milestone-3/task-6/.shapetree", null));
-    let targetResource: URL = this.toUrl(server, "/data/projects/project-1/milestone-3/task-6/");
-    let focusNodes: Array<URL> = [this.toUrl(server, "/data/projects/project-1/milestone-3/task-6/#task")];
+    let targetResource: URL = this.server.urlFor("/data/projects/project-1/milestone-3/task-6/");
+    let focusNodes: Array<URL> = [this.server.urlFor("/data/projects/project-1/milestone-3/task-6/#task")];
     // Create the task-6 container in /projects/project-1/milestone-3/ using PATCH
     // 1. Will be validated by the parent MilestoneTree planted on /data/projects/project-1/milestone-3/
-    let response: DocumentResponse = this.shapeTreeClient.patchManagedInstance(this.context, targetResource, focusNodes, this.getTaskSixSparqlPatch());
+    let response: DocumentResponse = await this.shapeTreeClient.patchManagedInstance(this.context, targetResource, focusNodes, this.getTaskSixSparqlPatch());
     expect(201).toEqual(response.getStatusCode());
-  }
+});
 
-  // @SneakyThrows, @Test, @DisplayName("Create Second Task in Project Without Focus Node")
-  createSecondTaskInProjectWithoutFocusNode(): void {
-    const server = getLocal({ debug: false });
-    server.setDispatcher(AbstractHttpClientProjectTests.dispatcher);
+// createSecondTaskInProjectWithoutFocusNode
+test("Create Second Task in Project Without Focus Node", async () => {
     // Add fixtures for /data/
     AbstractHttpClientProjectTests.dispatcher.getConfiguredFixtures().push(new DispatcherEntry(["project/data-container"], "GET", "/data/", null));
     AbstractHttpClientProjectTests.dispatcher.getConfiguredFixtures().push(new DispatcherEntry(["project/data-container-manager"], "GET", "/data/.shapetree", null));
@@ -339,17 +313,15 @@ export class AbstractHttpClientProjectTests extends AbstractHttpClientTests {
     // Add fixture for /projects/project-1/milestone-3/task-6/ to handle response to create via POST
     AbstractHttpClientProjectTests.dispatcher.getConfiguredFixtures().push(new DispatcherEntry(["project/task-48-create-response"], "POST", "/data/projects/project-1/milestone-3/task-48/", null));
     AbstractHttpClientProjectTests.dispatcher.getConfiguredFixtures().push(new DispatcherEntry(["http/201"], "POST", "/data/projects/project-1/milestone-3/task-48/.shapetree", null));
-    let targetContainer: URL = this.toUrl(server, "/data/projects/project-1/milestone-3/");
-    let targetShapeTrees: Array<URL> = [this.toUrl(server, "/static/shapetrees/project/shapetree#TaskTree")];
+    let targetContainer: URL = this.server.urlFor("/data/projects/project-1/milestone-3/");
+    let targetShapeTrees: Array<URL> = [this.server.urlFor("/static/shapetrees/project/shapetree#TaskTree")];
     // create task-48 in milestone-3 - supply a target shape tree, but not a focus node
-    let response: DocumentResponse = this.shapeTreeClient.postManagedInstance(this.context, targetContainer, null, "task-48", true, targetShapeTrees, this.getTaskFortyEightBodyGraph(), AbstractHttpClientProjectTests.TEXT_TURTLE);
+    let response: DocumentResponse = await this.shapeTreeClient.postManagedInstance(this.context, targetContainer, null, "task-48", true, targetShapeTrees, this.getTaskFortyEightBodyGraph(), AbstractHttpClientProjectTests.TEXT_TURTLE);
     expect(201).toEqual(response.getStatusCode());
-  }
+});
 
-  // @SneakyThrows, @Test, @DisplayName("Create Third Task in Project Without Target Shape Tree or Focus Node")
-  createThirdTaskInProjectWithoutAnyContext(): void {
-    const server = getLocal({ debug: false });
-    server.setDispatcher(AbstractHttpClientProjectTests.dispatcher);
+// createThirdTaskInProjectWithoutAnyContext
+test("Create Third Task in Project Without Target Shape Tree or Focus Node", async () => {
     // Add fixtures for /data/
     AbstractHttpClientProjectTests.dispatcher.getConfiguredFixtures().push(new DispatcherEntry(["project/data-container"], "GET", "/data/", null));
     AbstractHttpClientProjectTests.dispatcher.getConfiguredFixtures().push(new DispatcherEntry(["project/data-container-manager"], "GET", "/data/.shapetree", null));
@@ -365,16 +337,14 @@ export class AbstractHttpClientProjectTests extends AbstractHttpClientTests {
     // Add fixture for /projects/project-1/milestone-3/task-6/ to handle response to create via POST
     AbstractHttpClientProjectTests.dispatcher.getConfiguredFixtures().push(new DispatcherEntry(["project/task-48-create-response"], "POST", "/data/projects/project-1/milestone-3/task-48/", null));
     AbstractHttpClientProjectTests.dispatcher.getConfiguredFixtures().push(new DispatcherEntry(["http/201"], "POST", "/data/projects/project-1/milestone-3/task-48/.shapetree", null));
-    let targetContainer: URL = this.toUrl(server, "/data/projects/project-1/milestone-3/");
+    let targetContainer: URL = this.server.urlFor("/data/projects/project-1/milestone-3/");
     // create task-48 in milestone-3 - don't supply a target shape tree or focus node
-    let response: DocumentResponse = this.shapeTreeClient.postManagedInstance(this.context, targetContainer, null, "task-48", true, null, this.getTaskFortyEightBodyGraph(), AbstractHttpClientProjectTests.TEXT_TURTLE);
+    let response: DocumentResponse = await this.shapeTreeClient.postManagedInstance(this.context, targetContainer, null, "task-48", true, null, this.getTaskFortyEightBodyGraph(), AbstractHttpClientProjectTests.TEXT_TURTLE);
     expect(201).toEqual(response.getStatusCode());
-  }
+});
 
-  // @SneakyThrows, @Test, @DisplayName("Create Second Task in Project With Focus Node Without Target Shape Tree")
-  createSecondTaskInProjectWithFocusNodeWithoutTargetShapeTree(): void {
-    const server = getLocal({ debug: false });
-    server.setDispatcher(AbstractHttpClientProjectTests.dispatcher);
+// createSecondTaskInProjectWithFocusNodeWithoutTargetShapeTree
+test("Create Second Task in Project With Focus Node Without Target Shape Tree", async () => {
     // Add fixtures for /data/
     AbstractHttpClientProjectTests.dispatcher.getConfiguredFixtures().push(new DispatcherEntry(["project/data-container"], "GET", "/data/", null));
     AbstractHttpClientProjectTests.dispatcher.getConfiguredFixtures().push(new DispatcherEntry(["project/data-container-manager"], "GET", "/data/.shapetree", null));
@@ -390,17 +360,15 @@ export class AbstractHttpClientProjectTests extends AbstractHttpClientTests {
     // Add fixture for /projects/project-1/milestone-3/task-6/ to handle response to create via POST
     AbstractHttpClientProjectTests.dispatcher.getConfiguredFixtures().push(new DispatcherEntry(["project/task-48-create-response"], "POST", "/data/projects/project-1/milestone-3/task-48/", null));
     AbstractHttpClientProjectTests.dispatcher.getConfiguredFixtures().push(new DispatcherEntry(["http/201"], "POST", "/data/projects/project-1/milestone-3/task-48/.shapetree", null));
-    let targetContainer: URL = this.toUrl(server, "/data/projects/project-1/milestone-3/");
-    let focusNodes: Array<URL> = [this.toUrl(server, "/data/projects/project-1/milestone-3/task-48/#task")];
+    let targetContainer: URL = this.server.urlFor("/data/projects/project-1/milestone-3/");
+    let focusNodes: Array<URL> = [this.server.urlFor("/data/projects/project-1/milestone-3/task-48/#task")];
     // create task-48 in milestone-3 - supply a focus node but no target shape tree
-    let response: DocumentResponse = this.shapeTreeClient.postManagedInstance(this.context, targetContainer, focusNodes, "task-48", true, null, this.getTaskFortyEightBodyGraph(), AbstractHttpClientProjectTests.TEXT_TURTLE);
+    let response: DocumentResponse = await this.shapeTreeClient.postManagedInstance(this.context, targetContainer, focusNodes, "task-48", true, null, this.getTaskFortyEightBodyGraph(), AbstractHttpClientProjectTests.TEXT_TURTLE);
     expect(201).toEqual(response.getStatusCode());
-  }
+});
 
-  // @SneakyThrows, @Test, @DisplayName("Create Attachment in Task")
-  createAttachmentInTask(): void {
-    const server = getLocal({ debug: false });
-    server.setDispatcher(AbstractHttpClientProjectTests.dispatcher);
+// createAttachmentInTask
+test("Create Attachment in Task", async () => {
     // create an attachment in task-48 (success)
     // Add fixtures for /data/
     AbstractHttpClientProjectTests.dispatcher.getConfiguredFixtures().push(new DispatcherEntry(["project/data-container"], "GET", "/data/", null));
@@ -420,16 +388,14 @@ export class AbstractHttpClientProjectTests extends AbstractHttpClientTests {
     // Add fixture to handle PUT response and follow-up request
     AbstractHttpClientProjectTests.dispatcher.getConfiguredFixtures().push(new DispatcherEntry(["project/attachment-48"], "PUT", "/data/projects/project-1/milestone-3/task-48/attachment-48", null));
     AbstractHttpClientProjectTests.dispatcher.getConfiguredFixtures().push(new DispatcherEntry(["http/201"], "POST", "/data/projects/project-1/milestone-3/task-48/attachment-48.shapetree", null));
-    let targetResource: URL = this.toUrl(server, "/data/projects/project-1/milestone-3/task-48/attachment-48");
-    let targetShapeTrees: Array<URL> = [this.toUrl(server, "/static/shapetrees/project/shapetree#AttachmentTree")];
-    let response: DocumentResponse = this.shapeTreeClient.putManagedInstance(this.context, targetResource, null, null, "application/octet-stream", targetShapeTrees, false);
+    let targetResource: URL = this.server.urlFor("/data/projects/project-1/milestone-3/task-48/attachment-48");
+    let targetShapeTrees: Array<URL> = [this.server.urlFor("/static/shapetrees/project/shapetree#AttachmentTree")];
+    let response: DocumentResponse = await this.shapeTreeClient.putManagedInstance(this.context, targetResource, null, null, "application/octet-stream", targetShapeTrees, false);
     expect(201).toEqual(response.getStatusCode());
-  }
+});
 
-  // @SneakyThrows, @Test, @DisplayName("Create Second Attachment in Task")
-  createSecondAttachmentInTask(): void {
-    const server = getLocal({ debug: false });
-    server.setDispatcher(AbstractHttpClientProjectTests.dispatcher);
+// createSecondAttachmentInTask
+test("Create Second Attachment in Task", async () => {
     // create an attachment in task-48 (success)
     // Add fixtures for /data/
     AbstractHttpClientProjectTests.dispatcher.getConfiguredFixtures().push(new DispatcherEntry(["project/data-container"], "GET", "/data/", null));
@@ -449,35 +415,31 @@ export class AbstractHttpClientProjectTests extends AbstractHttpClientTests {
     // Add fixture to handle PUT response and follow-up request
     AbstractHttpClientProjectTests.dispatcher.getConfiguredFixtures().push(new DispatcherEntry(["project/random-png"], "PUT", "/data/projects/project-1/milestone-3/task-48/random.png", null));
     AbstractHttpClientProjectTests.dispatcher.getConfiguredFixtures().push(new DispatcherEntry(["http/201"], "POST", "/data/projects/project-1/milestone-3/task-48/random.png.shapetree", null));
-    let targetResource: URL = this.toUrl(server, "/data/projects/project-1/milestone-3/task-48/random.png");
-    let targetShapeTrees: Array<URL> = [this.toUrl(server, "/static/shapetrees/project/shapetree#AttachmentTree")];
-    let response: DocumentResponse = this.shapeTreeClient.putManagedInstance(this.context, targetResource, null, null, "application/octet-stream", targetShapeTrees, false);
+    let targetResource: URL = this.server.urlFor("/data/projects/project-1/milestone-3/task-48/random.png");
+    let targetShapeTrees: Array<URL> = [this.server.urlFor("/static/shapetrees/project/shapetree#AttachmentTree")];
+    let response: DocumentResponse = await this.shapeTreeClient.putManagedInstance(this.context, targetResource, null, null, "application/octet-stream", targetShapeTrees, false);
     expect(201).toEqual(response.getStatusCode());
-  }
+});
 
-  // @SneakyThrows, @Test, @DisplayName("Fail to Unplant Non-Root Task")
-  failToUnplantNonRootTask(): void {
-    const server = getLocal({ debug: false });
-    server.setDispatcher(AbstractHttpClientProjectTests.dispatcher);
+// failToUnplantNonRootTask
+test("Fail to Unplant Non-Root Task", async () => {
     // Add fixture for /data/projects/project-1/milestone-3/, which is not the root of the project hierarchy according to its manager
     AbstractHttpClientProjectTests.dispatcher.getConfiguredFixtures().push(new DispatcherEntry(["project/milestone-3-container"], "GET", "/data/projects/project-1/milestone-3/", null));
     AbstractHttpClientProjectTests.dispatcher.getConfiguredFixtures().push(new DispatcherEntry(["project/milestone-3-container-manager"], "GET", "/data/projects/project-1/milestone-3/.shapetree", null));
-    let targetResource: URL = this.toUrl(server, "/data/projects/project-1/milestone-3/");
-    let targetShapeTreeOne: URL = this.toUrl(server, "/static/shapetrees/project/shapetree#MilestoneTree");
-    let targetShapeTreeTwo: URL = this.toUrl(server, "/static/shapetrees/project/shapetree#ProjectsTree");
+    let targetResource: URL = this.server.urlFor("/data/projects/project-1/milestone-3/");
+    let targetShapeTreeOne: URL = this.server.urlFor("/static/shapetrees/project/shapetree#MilestoneTree");
+    let targetShapeTreeTwo: URL = this.server.urlFor("/static/shapetrees/project/shapetree#ProjectsTree");
     // Try first by providing the Milestone Shape Tree as the unplant target
-    let responseOne: DocumentResponse = this.shapeTreeClient.unplantShapeTree(this.context, targetResource, targetShapeTreeOne);
+    let responseOne: DocumentResponse = await this.shapeTreeClient.unplantShapeTree(this.context, targetResource, targetShapeTreeOne);
     expect(500).toEqual(responseOne.getStatusCode());
     // Try again by providing the (incorrect) Project Shape Tree as the unplant target (which is the shape tree at the root of the hierarchy) - this will be caught by the client immediately
     expect(async () => {
       let responseTwo: DocumentResponse = await this.shapeTreeClient.unplantShapeTree(this.context, targetResource, targetShapeTreeTwo);
     }).rejects.toBeInstanceOf(Error);
-  }
+});
 
-  // @SneakyThrows, @Test, @DisplayName("Unplant Projects")
-  unplantProjects(): void {
-    const server = getLocal({ debug: false });
-    server.setDispatcher(AbstractHttpClientProjectTests.dispatcher);
+// unplantProjects
+test("Unplant Projects", async () => {
     // Unplant the project collection, recursing down the tree (success)
     AbstractHttpClientProjectTests.dispatcher.getConfiguredFixtures().push(new DispatcherEntry(["project/data-container"], "GET", "/data/", null));
     AbstractHttpClientProjectTests.dispatcher.getConfiguredFixtures().push(new DispatcherEntry(["project/data-container-manager"], "GET", "/data/.shapetree", null));
@@ -514,16 +476,14 @@ export class AbstractHttpClientProjectTests extends AbstractHttpClientTests {
     AbstractHttpClientProjectTests.dispatcher.getConfiguredFixtures().push(new DispatcherEntry(["project/issue-3"], "GET", "/data/projects/project-1/milestone-3/issue-3", null));
     AbstractHttpClientProjectTests.dispatcher.getConfiguredFixtures().push(new DispatcherEntry(["project/issue-3-manager"], "GET", "/data/projects/project-1/milestone-3/issue-3.shapetree", null));
     AbstractHttpClientProjectTests.dispatcher.getConfiguredFixtures().push(new DispatcherEntry(["project/204"], "DELETE", "/data/projects/project-1/milestone-3/issue-3.shapetree", null));
-    let targetResource: URL = this.toUrl(server, "/data/projects/");
-    let targetShapeTree: URL = this.toUrl(server, "/static/shapetrees/project/shapetree#ProjectCollectionTree");
-    let response: DocumentResponse = this.shapeTreeClient.unplantShapeTree(this.context, targetResource, targetShapeTree);
+    let targetResource: URL = this.server.urlFor("/data/projects/");
+    let targetShapeTree: URL = this.server.urlFor("/static/shapetrees/project/shapetree#ProjectCollectionTree");
+    let response: DocumentResponse = await this.shapeTreeClient.unplantShapeTree(this.context, targetResource, targetShapeTree);
     expect(201).toEqual(response.getStatusCode());
-  }
+});
 
-  // @SneakyThrows, @Test, @DisplayName("Unplant Data Set")
-  unplantData(): void {
-    const server = getLocal({ debug: false });
-    server.setDispatcher(AbstractHttpClientProjectTests.dispatcher);
+// unplantData
+test("Unplant Data Set", async () => {
     // Unplant the data collection, recursing down the tree (success). The root level (pre-loaded) and one level below projects included for completeness
     AbstractHttpClientProjectTests.dispatcher.getConfiguredFixtures().push(new DispatcherEntry(["project/data-container"], "GET", "/data/", null));
     AbstractHttpClientProjectTests.dispatcher.getConfiguredFixtures().push(new DispatcherEntry(["project/data-container-manager"], "GET", "/data/.shapetree", null));
@@ -535,41 +495,40 @@ export class AbstractHttpClientProjectTests extends AbstractHttpClientTests {
     // Add fixture for /projects/project-1/
     AbstractHttpClientProjectTests.dispatcher.getConfiguredFixtures().push(new DispatcherEntry(["project/project-1-container"], "GET", "/data/projects/project-1/", null));
     AbstractHttpClientProjectTests.dispatcher.getConfiguredFixtures().push(new DispatcherEntry(["project/project-1-container-manager"], "GET", "/data/projects/project-1/.shapetree", null));
-    let targetResource: URL = this.toUrl(server, "/data/");
-    let targetShapeTree: URL = this.toUrl(server, "/static/shapetrees/project/shapetree#DataRepositoryTree");
+    let targetResource: URL = this.server.urlFor("/data/");
+    let targetShapeTree: URL = this.server.urlFor("/static/shapetrees/project/shapetree#DataRepositoryTree");
     // Unplant the data collection, recursing down the tree (only two levels)
     // Since the projects collection still manages /data/projects/, it should not delete the manager, only update it
-    let response: DocumentResponse = this.shapeTreeClient.unplantShapeTree(this.context, targetResource, targetShapeTree);
+    let response: DocumentResponse = await this.shapeTreeClient.unplantShapeTree(this.context, targetResource, targetShapeTree);
     expect(201).toEqual(response.getStatusCode());
-  }
+});
 
-  // @SneakyThrows, @Test, @DisplayName("Plant Data Repository with Patch")
-  async plantDataRepositoryWithPatch(): Promise<void> {
-    const server = getLocal({ debug: false });
-    server.setDispatcher(AbstractHttpClientProjectTests.dispatcher);
+// plantDataRepositoryWithPatch
+test("Plant Data Repository with Patch", async () => {
     // Create the data container
     AbstractHttpClientProjectTests.dispatcher.getConfiguredFixtures().push(new DispatcherEntry(["project/data-container-no-contains"], "GET", "/data/", null));
     AbstractHttpClientProjectTests.dispatcher.getConfiguredFixtures().push(new DispatcherEntry(["http/201"], "POST", "/data/.shapetree", null));
-    let targetResource: URL = this.toUrl(server, "/data/.shapetree");
+    let targetResource: URL = this.server.urlFor("/data/.shapetree");
     // Plant the data repository on newly created data container
     let response: DocumentResponse = await this.shapeTreeClient.patchManagedInstance(this.context, targetResource, null, this.getPlantDataRepositorySparqlPatch(server));
     expect(201).toEqual(response.getStatusCode());
-  }
+});
 
-  // @SneakyThrows, @Test, @DisplayName("Update Project Collection manager with Patch")
-  async updateProjectsManagerWithPatch(): Promise<void> {
-    const server = getLocal({ debug: false });
-    server.setDispatcher(AbstractHttpClientProjectTests.dispatcher);
+// updateProjectsManagerWithPatch
+test("Update Project Collection manager with Patch", async () => {
     // Add fixtures for data repository container and manager
     AbstractHttpClientProjectTests.dispatcher.getConfiguredFixtures().push(new DispatcherEntry(["project/data-container"], "GET", "/data/", null));
     AbstractHttpClientProjectTests.dispatcher.getConfiguredFixtures().push(new DispatcherEntry(["project/data-container-manager"], "GET", "/data/.shapetree", null));
     // Add fixtures for /projects/
     AbstractHttpClientProjectTests.dispatcher.getConfiguredFixtures().push(new DispatcherEntry(["project/projects-container-no-contains"], "GET", "/data/projects/", null));
     AbstractHttpClientProjectTests.dispatcher.getConfiguredFixtures().push(new DispatcherEntry(["project/projects-container-manager"], "GET", "/data/projects/.shapetree", null));
-    let targetResource: URL = this.toUrl(server, "/data/projects/.shapetree");
+    let targetResource: URL = this.server.urlFor("/data/projects/.shapetree");
     // Update the manager directly for the /data/projects/ with PATCH
     let response: DocumentResponse = await this.shapeTreeClient.patchManagedInstance(this.context, targetResource, null, this.getUpdateDataRepositorySparqlPatch(server));
     expect(201).toEqual(response.getStatusCode());
+});
+
+          });
   }
 
   private getProjectsBodyGraph(): string {
@@ -605,10 +564,10 @@ export class AbstractHttpClientProjectTests extends AbstractHttpClientTests {
   }
 
   private getPlantDataRepositorySparqlPatch(server: Mockttp): string /* throws MalformedURLException */ {
-    return "PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> \n" + "PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#> \n" + "PREFIX st: <http://www.w3.org/ns/shapetrees#> \n" + "PREFIX ex: <http://www.example.com/ns/ex#> \n" + "INSERT DATA { \n" + "   <> a st:Manager . \n" + "   <> st:hasAssignment <#ln1> . \n" + "   <#ln1> st:assigns <" + this.toUrl(server, "/static/shapetrees/project/shapetree#DataRepositoryTree") + "> . \n" + "   <#ln1> st:manages </data/> . \n" + "   <#ln1> st:hasRootAssignment </data/.shapetree#ln1> . \n" + "   <#ln1> st:focusNode </data/#repository> . \n" + "   <#ln1> st:shape <" + this.toUrl(server, "/static/shex/project/shex#DataRepositoryShape") + "> . \n" + "} \n";
+    return "PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> \n" + "PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#> \n" + "PREFIX st: <http://www.w3.org/ns/shapetrees#> \n" + "PREFIX ex: <http://www.example.com/ns/ex#> \n" + "INSERT DATA { \n" + "   <> a st:Manager . \n" + "   <> st:hasAssignment <#ln1> . \n" + "   <#ln1> st:assigns <" + this.server.urlFor("/static/shapetrees/project/shapetree#DataRepositoryTree") + "> . \n" + "   <#ln1> st:manages </data/> . \n" + "   <#ln1> st:hasRootAssignment </data/.shapetree#ln1> . \n" + "   <#ln1> st:focusNode </data/#repository> . \n" + "   <#ln1> st:shape <" + this.server.urlFor("/static/shex/project/shex#DataRepositoryShape") + "> . \n" + "} \n";
   }
 
   private getUpdateDataRepositorySparqlPatch(server: Mockttp): string /* throws MalformedURLException */ {
-    return "PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> \n" + "PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#> \n" + "PREFIX st: <http://www.w3.org/ns/shapetrees#> \n" + "PREFIX ex: <http://www.example.com/ns/ex#> \n" + "INSERT DATA { \n" + "   <> a st:Manager . \n" + "   <> st:hasAssignment <#ln2> . \n" + "   <#ln2> st:assigns <" + this.toUrl(server, "/static/shapetrees/project/shapetree#ProjectCollectionTree") + "> . \n" + "   <#ln2> st:manages </data/projects/> . \n" + "   <#ln2> st:hasRootAssignment </data/projects/.shapetree#ln2> . \n" + "   <#ln2> st:focusNode </data/projects/#collection> . \n" + "   <#ln2> st:shape <" + this.toUrl(server, "/static/shex/project/shex#ProjectCollectionShape") + "> . \n" + "} \n";
+    return "PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> \n" + "PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#> \n" + "PREFIX st: <http://www.w3.org/ns/shapetrees#> \n" + "PREFIX ex: <http://www.example.com/ns/ex#> \n" + "INSERT DATA { \n" + "   <> a st:Manager . \n" + "   <> st:hasAssignment <#ln2> . \n" + "   <#ln2> st:assigns <" + this.server.urlFor("/static/shapetrees/project/shapetree#ProjectCollectionTree") + "> . \n" + "   <#ln2> st:manages </data/projects/> . \n" + "   <#ln2> st:hasRootAssignment </data/projects/.shapetree#ln2> . \n" + "   <#ln2> st:focusNode </data/projects/#collection> . \n" + "   <#ln2> st:shape <" + this.server.urlFor("/static/shex/project/shex#ProjectCollectionShape") + "> . \n" + "} \n";
   }
 }

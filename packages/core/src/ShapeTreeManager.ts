@@ -33,10 +33,10 @@ export class ShapeTreeManager {
   }
 
   public toString():string {
-    return "ShapeTreeManager{" +
-        "id=" + this.id +
-        ", assignments=" + this.assignments +
-        '}';
+    return `ShapeTreeManager{
+    id=${this.id}
+    assignments=[${this.assignments.map(a => a.toString().replace(/\n/g, "\n    "))}]
+}`;
   }
 
   /**
@@ -186,7 +186,7 @@ export class ShapeTreeManager {
       return null;
     }
     for (const assignment of this.getAssignments()) {
-      if (rootAssignment.getUrl() === assignment.getRootAssignment()) {
+      if (rootAssignment.getUrl().href === assignment.getRootAssignment().href) {
         return assignment;
       }
     }

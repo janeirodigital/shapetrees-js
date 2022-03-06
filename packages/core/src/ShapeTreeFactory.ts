@@ -31,7 +31,7 @@ export class ShapeTreeFactory {
   public static async getShapeTree(shapeTreeUrl: URL): Promise<ShapeTree> /* throws ShapeTreeException */ {
     log.debug("Parsing shape tree: <%s>", shapeTreeUrl);
     if (ShapeTreeFactory.localShapeTreeCache.has(shapeTreeUrl.href)) {
-      log.debug("[{}] previously cached -- returning", shapeTreeUrl.href);
+      log.debug(`<${shapeTreeUrl.href}> previously cached -- returning`);
       return ShapeTreeFactory.localShapeTreeCache.get(shapeTreeUrl.href)!;
     }
     // Load the entire shape tree resource (which may contain multiple shape trees)
@@ -77,7 +77,7 @@ export class ShapeTreeFactory {
     try {
       return ShapeTreeFactory.getURLListValue(resourceModel, shapeTreeNode, ShapeTreeVocabulary.CONTAINS);
     } catch (ex: any) {
-       throw new ShapeTreeException(500, "List <" + shapeTreeUrl + "> contains malformed URL: " + ex.message);
+       throw new ShapeTreeException(500, `List <${shapeTreeUrl}> contains malformed URL: ${ex.message}`);
      }
   }
 
@@ -104,7 +104,7 @@ export class ShapeTreeFactory {
         }
         const referencedShapeTreeUrl: URL | null = ShapeTreeFactory.getUrlValue(resourceModel, referenceResource, ShapeTreeVocabulary.REFERENCES_SHAPE_TREE, shapeTreeUrl);
         if (referencedShapeTreeUrl === null) {
-            throw new ShapeTreeException(400, "expected <" + shapeTreeUrl + "> reference " + referenceResource.toString() + " to have one <" + ShapeTreeVocabulary.REFERENCES_SHAPE_TREE + "> property");
+            throw new ShapeTreeException(400, `expected <${shapeTreeUrl}> reference ${referenceResource.toString()} to have one <${ShapeTreeVocabulary.REFERENCES_SHAPE_TREE}> property`);
         }
         let referencedShapeTree: ShapeTreeReference;
         let viaShapePath: string | null = ShapeTreeFactory.getStringValue(resourceModel, referenceResource, ShapeTreeVocabulary.VIA_SHAPE_PATH);
@@ -136,10 +136,10 @@ export class ShapeTreeFactory {
         try {
           return new URL(object.value);
         } catch (ex: any) {
-           throw new Error("Malformed ShapeTree <" + shapeTreeUrl + ">: Jena URIResource <" + object + "> didn't parse as URL - " + ex.message);
+           throw new Error(`Malformed ShapeTree <${shapeTreeUrl}>: Jena URIResource <${object}> didn't parse as URL - ${ex.message}`);
          }
       } else {
-        throw new ShapeTreeException(500, "Malformed ShapeTree <" + shapeTreeUrl + ">: expected " + object + " to be a URL");
+        throw new ShapeTreeException(500, `Malformed ShapeTree <${shapeTreeUrl}>: expected ${object} to be a URL`);
       }
     }
     return null;
@@ -163,7 +163,7 @@ export class ShapeTreeFactory {
       if (['Literal', 'NamedNode'].indexOf(statements[0].object.termType) !== -1) {
         return statements[0].object.value;
       } else {
-        throw new ShapeTreeException(500, "Cannot determine object type when converting from string for: " + predicate);
+        throw new ShapeTreeException(500, `Cannot determine object type when converting from string for: ${predicate}`);
       }
     }
     return null;

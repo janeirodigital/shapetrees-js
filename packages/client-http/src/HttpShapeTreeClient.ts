@@ -90,8 +90,8 @@ export class HttpShapeTreeClient implements ShapeTreeClient {
     if (context === null || targetResource === null || targetShapeTree === null) {
       throw new ShapeTreeException(500, "Must provide a valid context, target resource, and target shape tree to the plant shape tree");
     }
-    log.debug("Planting shape tree {} on {}: ", targetShapeTree, targetResource);
-    log.debug("Focus node: {}", focusNode === null ? "None provided" : focusNode);
+    log.debug(`Planting shape tree <${targetShapeTree}> on <${targetResource}>: `);
+    log.debug(`Focus node: ${focusNode === null ? "None provided" : '<' + focusNode + '>'}`);
     const resourceAccessor: HttpResourceAccessor = new HttpResourceAccessor();
     // Lookup the shape tree
     let shapeTree: ShapeTree = await ShapeTreeFactory.getShapeTree(targetShapeTree);

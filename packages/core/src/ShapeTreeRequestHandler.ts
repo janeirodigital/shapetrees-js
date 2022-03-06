@@ -351,7 +351,7 @@ export class ShapeTreeRequestHandler {
   }
 
   private atRootOfPlantHierarchy(rootAssignment: ShapeTreeAssignment, manageableResource: ManageableResource): boolean {
-    return rootAssignment.getManagedResource() === manageableResource.getUrl();
+    return rootAssignment.getManagedResource().href === manageableResource.getUrl().href;
   }
 
   // Return a root shape tree manager associated with a given shape tree assignment

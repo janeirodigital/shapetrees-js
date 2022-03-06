@@ -29,7 +29,7 @@ export class SchemaCache {
 
   public static isInitialized(): boolean {
     let initialized: boolean = SchemaCache.cache != null;
-    log.debug("Cache initialized set to {}", initialized);
+    log.debug(`Cache initialized set to ${initialized}`);
     return initialized;
   }
 

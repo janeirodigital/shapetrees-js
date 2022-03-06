@@ -167,7 +167,7 @@ export class RequestHelper {
    * @throws ShapeTreeException ShapeTreeException
    */
   public static async getIncomingBodyGraph(shapeTreeRequest: ShapeTreeRequest, baseUrl: URL, targetResource: InstanceResource | null): Promise<Store | null> /* throws ShapeTreeException */ {
-    log.debug("Reading request body into graph with baseUrl {}", baseUrl);
+    log.debug(`Reading request body into graph with baseUrl <${baseUrl}>`);
     if ((shapeTreeRequest.getResourceType() === ShapeTreeResourceType.NON_RDF && shapeTreeRequest.getContentType()!.toLowerCase() !== "application/sparql-update") || shapeTreeRequest.getBody() === null || shapeTreeRequest.getBody()!.length === 0) { // TODO: contentType could be null
       return null;
     }

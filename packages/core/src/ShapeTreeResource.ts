@@ -39,7 +39,7 @@ export class ShapeTreeResource {
     resourceUrl = removeUrlFragment(resourceUrl);
 
     if (ShapeTreeResource.localResourceCache.has(resourceUrl.href)) {
-      log.debug(`[${resourceUrl.href}] previously cached -- returning`);
+      log.debug(`<${resourceUrl.href}> previously cached -- returning`);
       return ShapeTreeResource.localResourceCache.get(resourceUrl.href)!;
     }
 

@@ -65,7 +65,7 @@ export class ShapeTreeManagerDelta {
       if (existingManager.getAssignments().find((existingAssignment) => existingAssignment.equals(updatedAssignment))) { continue; }
 
       // If this was already processed and marked as updated continue
-      if (delta.updatedAssignments.find(assignment => assignment.getUrl() === updatedAssignment.getUrl())) { continue; }
+      if (delta.updatedAssignments.find(assignment => assignment.getUrl().href === updatedAssignment.getUrl().href)) { continue; }
 
       // updated assignment isn't in the existing assignments, so it is new, add it
       delta.updatedAssignments.push(updatedAssignment);

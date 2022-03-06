@@ -98,7 +98,7 @@ export class ShapeTree {
       log.debug("Found cached schema {}", this.shape);
       schema = SchemaCache.getSchema(this.shape);
     } else {
-      log.debug("Did not find schema in cache {} will retrieve and parse", this.shape);
+      log.debug(`Did not find schema in cache <${this.shape}> will retrieve and parse`);
       let shexShapeContents: DocumentResponse = await DocumentLoaderManager.getLoader().loadExternalDocument(this.shape);
       if (shexShapeContents === null || shexShapeContents.getBody() === null || shexShapeContents.getBody()!.length === 0) {
         throw new ShapeTreeException(400, "Attempting to validate a ShapeTree (" + this.id + ") - Shape at (" + this.shape + ") is not found or is empty");

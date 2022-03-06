@@ -57,13 +57,13 @@ export class HttpResourceAccessor implements ResourceAccessor {
       return this.getInstanceFromMissingManageableResource(context, <MissingManageableResource>resource);
     } else if (resource instanceof MissingManagerResource) {
       // Get is for a manager resource that doesn't exist
-      return this.getInstanceFromMissingManagerResource(context, <MissingManagerResource>resource);
+      return await this.getInstanceFromMissingManagerResource(context, <MissingManagerResource>resource);
     } else if (resource instanceof ManageableResource) {
       // Get is for an existing manageable resource
-      return this.getInstanceFromManageableResource(context, <ManageableResource>resource);
+      return await this.getInstanceFromManageableResource(context, <ManageableResource>resource);
     } else if (resource instanceof ManagerResource) {
       // Get is for an existing manager resource
-      return this.getInstanceFromManagerResource(context, <ManagerResource>resource);
+      return await this.getInstanceFromManagerResource(context, <ManagerResource>resource);
     }
 
     throw new ShapeTreeException(500, "Can get instance from resource of unsupported type: " + resource.getUrl());
@@ -229,7 +229,7 @@ export class HttpResourceAccessor implements ResourceAccessor {
    * @throws ShapeTreeException
    */
   public async getResource(context: ShapeTreeContext, resourceUrl: URL): Promise<InstanceResource> /* throws ShapeTreeException */ {
-    log.debug("HttpResourceAccessor#getResource({})", resourceUrl);
+    log.debug(`HttpResourceAccessor#getResource(<${resourceUrl}>)`);
     let headers: ResourceAttributes = new ResourceAttributes();
     headers.maybeSet(HttpHeaders.AUTHORIZATION, context.getAuthorizationHeaderValue());
     let fetcher: HttpClient = HttpClientFactoryManager.getFactory().get(false);
@@ -252,7 +252,7 @@ export class HttpResourceAccessor implements ResourceAccessor {
    * @throws ShapeTreeException
    */
   public async createResource(context: ShapeTreeContext, method: string, resourceUrl: URL, headers: ResourceAttributes, body: string, contentType: string): Promise<InstanceResource> /* throws ShapeTreeException */ {
-    log.debug("createResource via {}: URL [{}], headers [{}]", method, resourceUrl, headers.toString());
+    log.debug(`createResource via ${method} URL <${resourceUrl}>, headers [{headers.toString()}]`);
     let fetcher: HttpClient = HttpClientFactoryManager.getFactory().get(false);
     let allHeaders: ResourceAttributes = headers.maybePlus(HttpHeaders.AUTHORIZATION, context.getAuthorizationHeaderValue());
     let response: DocumentResponse = await fetcher.fetchShapeTreeResponse(new HttpRequest(method, resourceUrl, allHeaders, body, contentType));
@@ -374,7 +374,7 @@ export class HttpResourceAccessor implements ResourceAccessor {
    * @throws ShapeTreeException
    */
   public async updateResource(context: ShapeTreeContext, method: string, updatedResource: InstanceResource, body: string): Promise<DocumentResponse> /* throws ShapeTreeException */ {
-    log.debug("updateResource: URL [{}]", updatedResource.getUrl());
+    log.debug(`updateResource: URL <${updatedResource.getUrl()}>`);
     let contentType: string | null = updatedResource.getAttributes().firstValue(HttpHeaders.CONTENT_TYPE);
     // [careful] updateResource attributes may contain illegal client headers (connection, content-length, date, expect, from, host, upgrade, via, warning)
     let allHeaders: ResourceAttributes = updatedResource.getAttributes().maybePlus(HttpHeaders.AUTHORIZATION, context.getAuthorizationHeaderValue());

@@ -98,7 +98,7 @@ export class ShapeTreeAssignment {
   }
 
   public isRootAssignment(): boolean {
-    return this.getUrl() === this.getRootAssignment();
+    return this.getUrl().href === this.getRootAssignment().href;
   }
 
   public getShapeTree(): URL {
@@ -135,13 +135,13 @@ export class ShapeTreeAssignment {
   }
 
   public toString(): string {
-    return "ShapeTreeAssignment{" +
-        "shapeTree=" + this.shapeTree +
-        ", managedResource=" + this.managedResource +
-        ", rootAssignment=" + this.rootAssignment +
-        ", focusNode=" + this.focusNode +
-        ", shape=" + this.shape +
-        ", url=" + this.url +
-        '}';
+    return `ShapeTreeAssignment{
+    url=${this.url}
+    shapeTree=${this.shapeTree}
+    managedResource=${this.managedResource}
+    rootAssignment=${this.rootAssignment}
+    focusNode=${this.focusNode}
+    shape=${this.shape}
+}`;
   }
 }
