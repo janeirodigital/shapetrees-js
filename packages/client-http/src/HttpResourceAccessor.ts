@@ -113,8 +113,11 @@ export class HttpResourceAccessor implements ResourceAccessor {
    * @throws ShapeTreeException
    */
   private async getInstanceFromManageableResource(context: ShapeTreeContext, manageable: ManageableResource): Promise<ManageableInstance> /* throws ShapeTreeException */ {
+
     let managerResourceUrl: URL = HttpResourceAccessor.expectNotNull(manageable.getManagerResourceUrl(), () => new ShapeTreeException(500, "Cannot discover shape tree manager for " + manageable.getUrl()));
+
     let manager: InstanceResource = await this.getResource(context, managerResourceUrl);
+
     if (manager instanceof MissingManagerResource) {
       // If the manager does exist it is unmanaged - Get and store both in instance
       let unmanaged: UnmanagedResource = new UnmanagedResource(manageable, manager.getUrl());
@@ -252,7 +255,7 @@ export class HttpResourceAccessor implements ResourceAccessor {
    * @throws ShapeTreeException
    */
   public async createResource(context: ShapeTreeContext, method: string, resourceUrl: URL, headers: ResourceAttributes, body: string, contentType: string): Promise<InstanceResource> /* throws ShapeTreeException */ {
-    log.debug(`createResource via ${method} URL <${resourceUrl}>, headers [{headers.toString()}]`);
+    log.debug(`createResource via ${method}: URL <${resourceUrl}>, headers [${headers.toString()}]`);
     let fetcher: HttpClient = HttpClientFactoryManager.getFactory().get(false);
     let allHeaders: ResourceAttributes = headers.maybePlus(HttpHeaders.AUTHORIZATION, context.getAuthorizationHeaderValue());
     let response: DocumentResponse = await fetcher.fetchShapeTreeResponse(new HttpRequest(method, resourceUrl, allHeaders, body, contentType));
@@ -341,22 +344,33 @@ export class HttpResourceAccessor implements ResourceAccessor {
         throw new ShapeTreeException(500, "Cannot get contained resources for a manager resource <" + containerResourceUrl + ">");
       }
       let containerResource: ManageableResource = <ManageableResource>resource;
+
       if (!containerResource.isContainer()) {
         throw new ShapeTreeException(500, "Cannot get contained resources for a resource that is not a Container <" + containerResourceUrl + ">");
       }
+
       let containerGraph: Store = await GraphHelper.readStringIntoModel(containerResourceUrl, containerResource.getBody(), containerResource.getAttributes().firstValue(HttpHeaders.CONTENT_TYPE) || null);
+
       if (containerGraph === null) {
         return Promise.resolve([]);
       }
-      let containerTriples: Array<Quad> = containerGraph.getQuads(DataFactory.namedNode(containerResourceUrl.href), DataFactory.namedNode(LdpVocabulary.CONTAINS), null, null);
-      if (containerTriples === null) {
-        return Promise.resolve([]);
-      }
+      let containerTriples: Array<Quad> = containerGraph.getQuads(
+          DataFactory.namedNode(containerResourceUrl.href),
+          DataFactory.namedNode(LdpVocabulary.CONTAINS),
+          null,
+          null
+      )
+          .sort((l, r) => l.object.value.localeCompare(r.object.value)); // ORDERED
+
+      if (containerTriples === null) { return Promise.resolve([]); }
+
       let containedInstances: Array<ManageableInstance> = new Array();
+
       for (const containerTriple of containerTriples) {
         let containedInstance: ManageableInstance = await this.getInstance(context, new URL(containerTriple.object.value)); // TODO: what if not an IRI?
         containedInstances.push(containedInstance);
       }
+
       return Promise.resolve(containedInstances);
     } catch (ex: any) {
        throw new ShapeTreeException(500, ex.message);

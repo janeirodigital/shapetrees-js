@@ -207,7 +207,7 @@ export class ShapeTree {
           continue;
         }
         // Evaluate the shape tree against the attributes of the proposed resources
-        let result: ValidationResult = await containsShapeTree.validateResource(requestedName, focusNodeUrls!, resourceType!, bodyGraph!);
+        const result: ValidationResult = await containsShapeTree.validateResource(requestedName, focusNodeUrls!, resourceType!, bodyGraph!);
         // Continue if the proposed attributes were not a match
         if (!result.getValid()) {
           continue;
@@ -222,9 +222,18 @@ export class ShapeTree {
   // Return the list of shape tree contains by priority from most to least strict
   public async getPrioritizedContains(): Promise<Array<URL>> {
     const prioritized: Array<URL> = [...this.contains];
-    const loaded: Array<ShapeTree> = await Promise.all(prioritized.map(
-        async url => await ShapeTreeFactory.getShapeTree(url)
-    ));
+    // optimized, undordered load
+    // const loaded: Array<ShapeTree> = await Promise.all(prioritized.map(
+    //     async url => await ShapeTreeFactory.getShapeTree(url)
+    // ));
+    // unoptimzied, ordered load
+    const loaded: Array<ShapeTree> = await prioritized.reduce(
+        async (accP: Promise<ShapeTree[]>, url) => {
+          const acc = await accP;
+          const st: ShapeTree = await ShapeTreeFactory.getShapeTree(url);
+          return acc.concat([st]);
+        }, Promise.resolve([])
+    );
     return loaded.sort(ShapeTreeContainsPriority).map(
         st => st.id
     );

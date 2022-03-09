@@ -29,14 +29,18 @@ export class ShapeTreeFactory {
    * @throws ShapeTreeException
    */
   public static async getShapeTree(shapeTreeUrl: URL): Promise<ShapeTree> /* throws ShapeTreeException */ {
+
     log.debug("Parsing shape tree: <%s>", shapeTreeUrl);
+
     if (ShapeTreeFactory.localShapeTreeCache.has(shapeTreeUrl.href)) {
       log.debug(`<${shapeTreeUrl.href}> previously cached -- returning`);
       return ShapeTreeFactory.localShapeTreeCache.get(shapeTreeUrl.href)!;
     }
+
     // Load the entire shape tree resource (which may contain multiple shape trees)
     let shapeTreeResource: ShapeTreeResource = await ShapeTreeResource.getShapeTreeResource(shapeTreeUrl);
     let resourceModel: Store = shapeTreeResource.getModel();
+
     // Load and set the expected resource type
     const expectsType: URL | null = ShapeTreeFactory.getUrlValue(resourceModel, shapeTreeUrl, ShapeTreeVocabulary.EXPECTS_TYPE, shapeTreeUrl);
     if (expectsType === null)
@@ -46,22 +50,30 @@ export class ShapeTreeFactory {
     // Load and set Label
     const label: string | null = ShapeTreeFactory.getStringValue(resourceModel, shapeTreeUrl, ShapeTreeFactory.RDFS_LABEL);
     // Load and set contains list
-    const contains: Array<URL> = ShapeTreeFactory.getContains(resourceModel, shapeTreeUrl, shapeTreeUrl);
+    const contains: Array<URL> = ShapeTreeFactory.getContains(resourceModel, shapeTreeUrl, shapeTreeUrl)
+        .sort((l,r) => l.href.localeCompare(r.href)); // ORDERED
     // Load and set references list
-    const references: Array<ShapeTreeReference> = ShapeTreeFactory.getReferences(resourceModel, shapeTreeUrl, shapeTreeUrl);
+    const references: Array<ShapeTreeReference> = ShapeTreeFactory.getReferences(resourceModel, shapeTreeUrl, shapeTreeUrl)
+        .sort((l,r) => l.referenceUrl.href.localeCompare(r.referenceUrl.href)); // ORDERED
+
     if (contains.length !== 0 && expectsType.href !== ShapeTreeVocabulary.CONTAINER) {
       throw new ShapeTreeException(400, "Only a container can be expected to have st:contains");
     }
+
     let shapeTree: ShapeTree = new ShapeTree(shapeTreeUrl, expectsType, label, shape, references, contains);
+
     ShapeTreeFactory.localShapeTreeCache.set(shapeTreeUrl.href, shapeTree);
+
     // Recursively parse contained shape trees
     for (const containedUrl of contains) { // TODO: try awaiting Promise.all(map...)
       await ShapeTreeFactory.getShapeTree(containedUrl);
     }
+
     // Recursively parse referenced shape trees
     for (const reference of references) {
       await ShapeTreeFactory.getShapeTree(reference.getReferenceUrl());
     }
+
     return shapeTree;
   }
 
