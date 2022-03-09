@@ -317,7 +317,7 @@ export class HttpResourceAccessor implements ResourceAccessor {
       if (exists) {
         return new ManagerResource(url, resourceType, attributes, body, name, true, managedResourceUrl);
       } else {
-        return new MissingManagerResource(url, managedResourceUrl, resourceType, attributes, body, name);
+        return new MissingManagerResource(managedResourceUrl, url, resourceType, attributes, body, name);
       }
     } else {
       // Look for presence of st:managedBy in link headers from response and get the target manager URL

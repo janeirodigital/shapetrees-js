@@ -4,6 +4,10 @@ import {DispatchEntryServer} from "../src/fixtures/DispatchEntryServer";
 import { DocumentResponse } from '@shapetrees/core/src/DocumentResponse';
 import { HttpShapeTreeClient } from '@shapetrees/client-http/src/HttpShapeTreeClient';
 import { ShapeTreeContext } from '@shapetrees/core/src/ShapeTreeContext';
+import { HttpClientCrossFetchFactory } from "@shpaetrees/http-client-cross-fetch/src/HttpClientCrossFetchFactory";
+import { HttpClientFactoryManager } from '@shapetrees/client-http/src/HttpClientFactoryManager';
+import { DocumentLoaderManager } from '@shapetrees/core/src/contentloaders/DocumentLoaderManager';
+import { HttpExternalDocumentLoader } from '@shapetrees/core/src/contentloaders/HttpExternalDocumentLoader';
 /*
 tried node-fetch but got:
     /home/eric/checkouts/janeirodigital/shapetrees-js/node_modules/node-fetch/src/index.js:9
@@ -15,10 +19,17 @@ tried node-fetch but got:
    > 5 | import fetch from 'node-fetch';
        | ^
  */
-import {fetch, Request} from 'cross-fetch';
+// import {fetch, Request} from 'cross-fetch';
 import * as log from 'loglevel';
 
 log.setLevel("info");
+
+const myFactory = new HttpClientCrossFetchFactory(false);
+HttpClientFactoryManager.setFactory(myFactory);
+
+const httpExternalDocumentLoader = new HttpExternalDocumentLoader();
+DocumentLoaderManager.setLoader(httpExternalDocumentLoader);
+
 const context = new ShapeTreeContext(null);
 const shapeTreeClient: HttpShapeTreeClient = new HttpShapeTreeClient();
 

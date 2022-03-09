@@ -60,7 +60,7 @@ test("Recursively Plant Data Set", async () => {
 */
 
 // plantProjectsRecursively
-test("Recursively Plant Projects Collection", async () => {log.setLevel(log.levels.TRACE);
+test("Recursively Plant Projects Collection", async () => {
     // Add planted data set
     let targetResource: URL = this.server.urlFor("/data/projects/");
     let targetShapeTree: URL = this.server.urlFor("/static/shapetrees/project/shapetree#ProjectCollectionTree");

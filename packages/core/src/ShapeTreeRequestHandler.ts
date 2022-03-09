@@ -259,12 +259,12 @@ export class ShapeTreeRequestHandler {
     }
     if (manageableInstance.getManagerResource().isExists()) {
       // update manager resource
-      this.resourceAccessor.updateResource(shapeTreeContext, "PUT", manageableInstance.getManagerResource(), shapeTreeManager.getGraph().toString());
+      await this.resourceAccessor.updateResource(shapeTreeContext, "PUT", manageableInstance.getManagerResource(), shapeTreeManager.getGraph().toString());
     } else {
       // create manager resource
       let headers: ResourceAttributes = new ResourceAttributes();
       headers.setAll(HttpHeaders.CONTENT_TYPE, [TEXT_TURTLE]);
-      this.resourceAccessor.createResource(shapeTreeContext, "POST", manageableInstance.getManagerResource().getUrl(), headers, shapeTreeManager.getGraph().toString(), TEXT_TURTLE);
+      await this.resourceAccessor.createResource(shapeTreeContext, "POST", manageableInstance.getManagerResource().getUrl(), headers, shapeTreeManager.getGraph().toString(), TEXT_TURTLE);
     }
     return null;
   }
